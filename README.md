@@ -1,6 +1,6 @@
 # PostKS
 
-### Pytorch version of <a href="https://arxiv.org/pdf/1902.04911.pdf" target="_blank">Learning to Select Knowledge for Response Generation in Dialog Systems</a>
+### Pytorch version of [Learning to Select Knowledge for Response Generation in Dialog Systems](https://arxiv.org/pdf/1902.04911.pdf)
 
 
 <p align="center">
