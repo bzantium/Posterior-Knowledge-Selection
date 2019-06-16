@@ -121,7 +121,7 @@ def main():
     n_hidden = params.n_hidden
     n_embed = params.n_embed
     n_batch = args.n_batch
-    temperature = 0.8
+    temperature = params.temperature
     train_path = params.train_path
     assert torch.cuda.is_available()
 

@@ -44,17 +44,17 @@ def evaluate(model, test_loader):
                            tgt_y.contiguous().view(-1))
         total_loss += loss.item()
     total_loss /= len(test_loader)
-    print("total_loss=%.4f" % (total_loss))
+    print("nll_loss=%.4f" % (total_loss))
 
 
 def main():
     args = parse_arguments()
-    n_vocab = 20000
-    n_layer = 2
-    n_hidden = 100
-    n_embed = 100
+    n_vocab = params.n_vocab
+    n_layer = params.n_layer
+    n_hidden = params.n_hidden
+    n_embed = params.n_embed
     n_batch = args.n_batch
-    temperature = 0.8
+    temperature = params.temperature
     test_path = params.test_path
     assert torch.cuda.is_available()
 
@@ -82,7 +82,7 @@ def main():
     decoder = init_model(decoder, restore=params.decoder_restore)
 
     model = [encoder, Kencoder, manager, decoder]
-    print("evaluate...")
+    print("start evaluating")
     evaluate(model, test_loader)
 
 
