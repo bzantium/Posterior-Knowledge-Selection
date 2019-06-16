@@ -81,7 +81,7 @@ def train(model, optimizer, train_loader, args):
             y = Kencoder(src_y)
             K = Kencoder(src_K)
             prior, posterior, k_i, k_logits = manager(x, y, K)
-            kldiv_loss = KLDLoss(prior, posterior)
+            kldiv_loss = KLDLoss(prior, posterior.detach())
             bow_loss = 0
             for i in range(1, src_y.size(1)):
                 bow_loss += NLLLoss(k_logits, src_y[:, i])
@@ -107,8 +107,6 @@ def train(model, optimizer, train_loader, args):
             loss.backward()
             clip_grad_norm_(parameters, args.grad_clip)
             optimizer.step()
-            print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: kld_loss=%.4f nll_loss=%.4f bow_loss=%.4f"
-                  % (epoch + 1, args.n_epoch, step, len(train_loader), kldiv_loss, nll_loss, bow_loss))
 
             if step % 50 == 0:
                 print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: loss=%.4f" % (epoch + 1, args.n_epoch,

@@ -108,7 +108,7 @@ class Manager(nn.Module):
         # x: [n_batch, 2*n_hidden], y: [n_batch, 2*n_hidden], K: [n_batch, N, 2*n_hidden]
         if not y is None:
             prior = F.softmax(torch.bmm(x.unsqueeze(1), K.transpose(-1, -2)), dim=-1).squeeze(1)
-            response = self.mlp(torch.cat((x, y), dim=-1))
+            response = self.mlp(torch.cat((x, y), dim=-1))  # response: [n_batch, 2*n_hidden]
             K = K.transpose(-1, -2)  # K: [n_batch, 2*n_hidden, N]
             posterior_logits = torch.bmm(response.unsqueeze(1), K).squeeze(1)
             posterior = F.softmax(posterior_logits, dim=-1)
@@ -144,7 +144,8 @@ class Attention(nn.Module):
 
     def score(self, hidden, encoder_outputs):
         # hidden: [n_batch, seq_len, n_hidden], encoder_outputs: [n_batch, seq_len, n_hidden]
-        attn_scores = torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim=-1)))  # [n_batch, seq_len, n_hidden]
+        attn_scores = torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim=-1)))
+        # attn_scores: [n_batch, seq_len, n_hidden]
         v = self.v.repeat(encoder_outputs.size(0), 1).unsqueeze(1)  # [n_batch, 1, n_hidden]
         attn_weights = F.softmax(torch.bmm(v, attn_scores.transpose(1, 2)), dim=-1)  # [n_batch, 1, seq_len]
         return attn_weights  # [n_batch, 1, seq_len]
