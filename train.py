@@ -25,10 +25,6 @@ def parse_arguments():
                    help='in case of gradient explosion')
     p.add_argument('-tfr', type=float, default=0.8,
                    help='teacher forcing ratio')
-    p.add_argument('-train_path', type=str, default="",
-                   help='path to train file')
-    p.add_argument('-test_path', type=str, default="",
-                   help='path to test file')
     p.add_argument('-restore', type=bool, default=False,
                    help='whether restore trained model')
     return p.parse_args()
@@ -111,10 +107,13 @@ def train(model, optimizer, train_loader, args):
             loss.backward()
             clip_grad_norm_(parameters, args.grad_clip)
             optimizer.step()
-            # if (step + 1) % 50 == 0:
-            print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: loss=%.4f" % (epoch + 1, args.n_epoch,
-                                                                     step + 1, len(train_loader),
-                                                                     loss.item()))
+            print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: kld_loss=%.4f nll_loss=%.4f bow_loss=%.4f"
+                  % (epoch + 1, args.n_epoch, step, len(train_loader), kldiv_loss, nll_loss, bow_loss))
+
+            if step % 50 == 0:
+                print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: loss=%.4f" % (epoch + 1, args.n_epoch,
+                                                                         step, len(train_loader),
+                                                                         loss.item()))
 
 
 def main():
