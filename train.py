@@ -82,9 +82,7 @@ def train(model, optimizer, train_loader, args):
             K = Kencoder(src_K)
             prior, posterior, k_i, k_logits = manager(x, y, K)
             kldiv_loss = KLDLoss(prior, posterior.detach())
-            bow_loss = 0
-            for i in range(1, src_y.size(1)):
-                bow_loss += NLLLoss(k_logits, src_y[:, i])
+            bow_loss = NLLLoss(k_logits, src_y.contiguous().view(-1))
 
             n_batch = src_X.size(0)
             max_len = tgt_y.size(1)
