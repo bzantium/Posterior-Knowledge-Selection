@@ -1,8 +1,10 @@
+import os
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 import params
 from copy import copy
+import torch.backends.cudnn as cudnn
 from collections import Counter
 
 
@@ -30,16 +32,41 @@ def gumbel_softmax(logits, temperature):
     return (y_hard - y).detach() + y
 
 
+def init_model(net, restore=None):
+
+    # restore model weights
+    if restore is not None and os.path.exists(restore):
+        net.load_state_dict(torch.load(restore))
+        print("Restore model from: {}".format(os.path.abspath(restore)))
+
+    # check if cuda is available
+    if torch.cuda.is_available():
+        cudnn.benchmark = True
+        net.cuda()
+    return net
+
+
+def save_model(net, filename):
+    """Save trained model."""
+    if not os.path.exists(params.model_root):
+        os.makedirs(params.model_root)
+    torch.save(net.state_dict(),
+               os.path.join(params.model_root, filename))
+    print("save pretrained model to: {}".format(os.path.join(params.model_root, filename)))
+
+
 def build_vocab(path, n_vocab):
     with open(path, errors="ignore") as file:
         word_counter = Counter()
-        vocab = dict()
-        reverse_vocab = dict()
-        vocab['<PAD>'] = params.PAD
-        vocab['<UNK>'] = params.UNK
-        vocab['<SOS>'] = params.SOS
-        vocab['<EOS>'] = params.EOS
-        initial_vocab_size = len(vocab)
+        vocab = Vocabulary()
+        # vocab = dict()
+        # reverse_vocab = dict()
+        vocab.stoi['<PAD>'] = params.PAD
+        vocab.stoi['<UNK>'] = params.UNK
+        vocab.stoi['<SOS>'] = params.SOS
+        vocab.stoi['<EOS>'] = params.EOS
+
+        initial_vocab_size = len(vocab.stoi)
         vocab_idx = initial_vocab_size
 
         for line in file:
@@ -54,7 +81,7 @@ def build_vocab(path, n_vocab):
                 count += 1
 
                 for word in k_line.split():
-                    if word in vocab:
+                    if word in vocab.itos:
                         word_counter[word] += 1
                     else:
                         word_counter[word] = 1
@@ -64,25 +91,25 @@ def build_vocab(path, n_vocab):
                 y_line = line.split("\t")[1].strip("\n")
 
                 for word in X_line.split():
-                    if word in vocab:
+                    if word in vocab.itos:
                         word_counter[word] += 1
                     else:
                         word_counter[word] = 1
 
                 for word in y_line.split():
-                    if word in vocab:
+                    if word in vocab.itos:
                         word_counter[word] += 1
                     else:
                         word_counter[word] = 1
 
         for key, _ in word_counter.most_common(n_vocab - initial_vocab_size):
-            vocab[key] = vocab_idx
+            vocab.stoi[key] = vocab_idx
             vocab_idx += 1
 
-        for key, value in vocab.items():
-            reverse_vocab[value] = key
+        for key, value in vocab.stoi.items():
+            vocab.itos.append(key)
 
-    return vocab, reverse_vocab
+    return vocab
 
 
 def load_data(path, vocab):
@@ -117,19 +144,19 @@ def load_data(path, vocab):
     for line in X:
         X_temp = []
         for word in line.split():
-            if word in vocab:
-                X_temp.append(vocab[word])
+            if word in vocab.stoi:
+                X_temp.append(vocab.stoi[word])
             else:
-                X_temp.append(vocab['<UNK>'])
+                X_temp.append(vocab.stoi['<UNK>'])
         X_ind.append(X_temp)
 
     for line in y:
         y_temp = []
         for word in line.split():
-            if word in vocab:
-                y_temp.append(vocab[word])
+            if word in vocab.stoi:
+                y_temp.append(vocab.stoi[word])
             else:
-                y_temp.append(vocab['<UNK>'])
+                y_temp.append(vocab.stoi['<UNK>'])
         y_ind.append(y_temp)
 
     for lines in K:
@@ -137,10 +164,10 @@ def load_data(path, vocab):
         for line in lines:
             k_temp = []
             for word in line.split():
-                if word in vocab:
-                    k_temp.append(vocab[word])
+                if word in vocab.stoi:
+                    k_temp.append(vocab.stoi[word])
                 else:
-                    k_temp.append(vocab['<UNK>'])
+                    k_temp.append(vocab.stoi['<UNK>'])
             K_temp.append(k_temp)
         K_ind.append(K_temp)
 
@@ -155,6 +182,12 @@ def get_data_loader(X, y, K, n_batch):
         shuffle=True
     )
     return data_loader
+
+
+class Vocabulary:
+    def __init__(self):
+        self.itos = list()
+        self.stoi = dict()
 
 
 class PersonaDataset(Dataset):

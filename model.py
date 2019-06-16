@@ -4,17 +4,27 @@ import torch
 import torch.nn as nn
 import torch.nn.utils.rnn as rnn
 import torch.nn.functional as F
+from torchnlp.word_to_vector import GloVe
 from utils import gumbel_softmax
 
 
 class Encoder(nn.Module):
-    def __init__(self, n_vocab, n_embed, n_hidden, n_layer):
+    def __init__(self, n_vocab, n_embed, n_hidden, n_layer, vocab=None):
         super(Encoder, self).__init__()
         self.n_vocab = n_vocab
         self.n_embed = n_embed
         self.n_hidden = n_hidden
         self.n_layer = n_layer
-        self.embedding = nn.Embedding(n_vocab, n_embed)
+        if vocab is None:
+            self.embedding = nn.Embedding(n_vocab, n_embed)
+        else:
+            embedding = torch.Tensor(n_vocab, n_embed)
+            vectors = GloVe()
+            for word in vocab.stoi:
+                if word in vectors.stoi:
+                    embedding[vocab.stoi[word]] = vectors[word]
+            self.embedding = nn.Embedding.from_pretrained(embedding)
+            print("encoder embedding is initialized with Glove")
         self.gru = nn.GRU(input_size=n_embed, hidden_size=n_hidden,
                           num_layers=n_layer, bidirectional=True)
 
@@ -35,13 +45,22 @@ class Encoder(nn.Module):
 
 
 class KnowledgeEncoder(nn.Module):
-    def __init__(self, n_vocab, n_embed, n_hidden, n_layer):
+    def __init__(self, n_vocab, n_embed, n_hidden, n_layer, vocab=None):
         super(KnowledgeEncoder, self).__init__()
         self.n_vocab = n_vocab
         self.n_embed = n_embed
         self.n_hidden = n_hidden
         self.n_layer = n_layer
-        self.embedding = nn.Embedding(n_vocab, n_embed)
+        if vocab is None:
+            self.embedding = nn.Embedding(n_vocab, n_embed)
+        else:
+            embedding = torch.Tensor(n_vocab, n_embed)
+            vectors = GloVe()
+            for word in vocab.stoi:
+                if word in vectors.stoi:
+                    embedding[vocab.stoi[word]] = vectors[word]
+            self.embedding = nn.Embedding.from_pretrained(embedding)
+            print("Kencoder embedding is initialized with Glove")
         self.gru = nn.GRU(input_size=n_embed, hidden_size=n_hidden,
                           num_layers=n_layer, bidirectional=True)
 
@@ -132,13 +151,22 @@ class Attention(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, n_vocab, n_embed, n_hidden, n_layer):
+    def __init__(self, n_vocab, n_embed, n_hidden, n_layer, vocab=None):
         super(Decoder, self).__init__()
         self.n_vocab = n_vocab
         self.n_embed = n_embed
         self.n_hidden = n_hidden
         self.n_layer = n_layer
-        self.embedding = nn.Embedding(n_vocab, n_embed)
+        if vocab is None:
+            self.embedding = nn.Embedding(n_vocab, n_embed)
+        else:
+            embedding = torch.Tensor(n_vocab, n_embed)
+            vectors = GloVe()
+            for word in vocab.stoi:
+                if word in vectors.stoi:
+                    embedding[vocab.stoi[word]] = vectors[word]
+            self.embedding = nn.Embedding.from_pretrained(embedding)
+            print("decoder embedding is initialized with Glove")
         self.attention = Attention(n_hidden)
         self.y_weight = nn.Linear(n_hidden, n_hidden)
         self.k_weight = nn.Linear(n_hidden, n_hidden)
