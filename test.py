@@ -76,12 +76,6 @@ def main():
     manager = Manager(n_hidden, n_vocab, temperature).cuda()
     decoder = Decoder(n_vocab, n_embed, n_hidden, n_layer).cuda()
 
-    if torch.cuda.device_count() > 1:
-        encoder = torch.nn.DataParallel(encoder)
-        Kencoder = torch.nn.DataParallel(Kencoder)
-        manager = torch.nn.DataParallel(manager)
-        decoder = torch.nn.DataParallel(decoder)
-
     encoder = init_model(encoder, restore=params.encoder_restore)
     Kencoder = init_model(Kencoder, restore=params.Kencoder_restore)
     manager = init_model(manager, restore=params.manager_restore)
