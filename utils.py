@@ -32,10 +32,6 @@ def gumbel_softmax(logits, temperature):
 
 def build_vocab(path, n_vocab):
     with open(path, errors="ignore") as file:
-        X = []
-        K = []
-        y = []
-        k = []
         word_counter = Counter()
         vocab = dict()
         reverse_vocab = dict()
@@ -43,17 +39,20 @@ def build_vocab(path, n_vocab):
         vocab['<UNK>'] = params.UNK
         vocab['<SOS>'] = params.SOS
         vocab['<EOS>'] = params.EOS
-        vocab_idx = len(vocab)
+        initial_vocab_size = len(vocab)
+        vocab_idx = initial_vocab_size
 
         for line in file:
             dialog_id = line.split()[0]
             if dialog_id == "1":
-                k = []
+                count = 0
 
             if "your persona:" in line:
-                if len(k) == 3:
+                if count == 3:
                     continue
                 k_line = line.split("persona:")[1].strip("\n")
+                count += 1
+
                 for word in k_line.split():
                     if word in vocab:
                         word_counter[word] += 1
@@ -76,7 +75,7 @@ def build_vocab(path, n_vocab):
                     else:
                         word_counter[word] = 1
 
-        for key, _ in word_counter.most_common(n_vocab - 2):
+        for key, _ in word_counter.most_common(n_vocab - initial_vocab_size):
             vocab[key] = vocab_idx
             vocab_idx += 1
 

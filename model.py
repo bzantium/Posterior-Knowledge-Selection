@@ -22,7 +22,7 @@ class Encoder(nn.Module):
         n_batch = X.size(0)
         inputs = self.embedding(X)
         inputs = inputs.transpose(0, 1)
-        seq_lengths = torch.sum(X != 0, dim=-1)  # [n_batch]\
+        seq_lengths = torch.sum(X > 0, dim=-1)  # [n_batch]
         packed_inputs = rnn.pack_padded_sequence(inputs, seq_lengths, enforce_sorted=False)
         packed_outputs, hidden = self.gru(packed_inputs)  # hidden: [2*n_layer, n_batch, n_hidden]
         last_hidden = hidden.view(self.n_layer, 2, n_batch, self.n_hidden)
@@ -54,7 +54,7 @@ class KnowledgeEncoder(nn.Module):
             encoded = torch.zeros(N, n_batch, 2*self.n_hidden)
             for i in range(N):
                 k = inputs[i].transpose(0, 1)  # [n_batch, seq_len, n_embed]
-                seq_lengths = torch.sum(K[:, i] != 0, dim=-1)
+                seq_lengths = torch.sum(K[:, i] > 0, dim=-1)
                 packed_inputs = rnn.pack_padded_sequence(k, seq_lengths, enforce_sorted=False)
                 _, hidden = self.gru(packed_inputs)  # hidden: [2*n_layer, n_batch, n_hidden]
                 hidden = hidden.view(self.n_layer, 2, n_batch, self.n_hidden)
@@ -67,7 +67,7 @@ class KnowledgeEncoder(nn.Module):
             n_batch = y.size(0)
             inputs = self.embedding(y)
             inputs = inputs.transpose(0, 1)  # [seq_len, n_batch, n_embed]
-            seq_lengths = torch.sum(y != 0, dim=-1)  # [n_batch]
+            seq_lengths = torch.sum(y > 0, dim=-1)  # [n_batch]
             packed_inputs = rnn.pack_padded_sequence(inputs, seq_lengths, enforce_sorted=False)
             _, hidden = self.gru(packed_inputs)  # hidden: [2*n_layer, n_batch, n_hidden]
             hidden = hidden.view(self.n_layer, 2, n_batch, self.n_hidden)
