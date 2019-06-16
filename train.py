@@ -81,7 +81,7 @@ def train(model, optimizer, train_loader, args):
             y = Kencoder(src_y)
             K = Kencoder(src_K)
             prior, posterior, k_i, k_logits = manager(x, y, K)
-            kldiv_loss = KLDLoss(torch.log(prior), posterior)
+            kldiv_loss = KLDLoss(prior, posterior)
             bow_loss = 0
             for i in range(1, src_y.size(1)):
                 bow_loss += NLLLoss(k_logits, src_y[:, i])
