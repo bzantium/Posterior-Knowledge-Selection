@@ -1,0 +1,9 @@
+PAD = 0
+UNK = 1
+SOS = 2
+EOS = 3
+n_vocab = 20000
+n_layer = 2
+n_hidden = 5
+n_embed = 3
+temperature = 0.8
