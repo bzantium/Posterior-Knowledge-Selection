@@ -112,9 +112,11 @@ def train(model, optimizer, train_loader, args):
             optimizer.step()
 
             if step % 50 == 0:
-                print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: loss=%.4f" % (epoch + 1, args.n_epoch,
-                                                                         step, len(train_loader),
-                                                                         loss.item()))
+                print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: total_loss=%.4f kldiv_loss=%.4f bow_loss=%.4f nll_loss=%.4f"
+                      % (epoch + 1, args.n_epoch,
+                         step, len(train_loader),
+                         loss.item(), kldiv_loss.item(),
+                         bow_loss.item(), nll_loss.item()))
 
 
 def main():
