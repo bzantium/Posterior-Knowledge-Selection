@@ -13,7 +13,7 @@ from model import Encoder, KnowledgeEncoder, Decoder, Manager
 
 def parse_arguments():
     p = argparse.ArgumentParser(description='Hyperparams')
-    p.add_argument('-pre_epochs', type=int, default=5,
+    p.add_argument('-pre_epoch', type=int, default=5,
                    help='number of epochs for pre_train')
     p.add_argument('-n_epoch', type=int, default=15,
                    help='number of epochs for train')
@@ -41,7 +41,7 @@ def pre_train(model, optimizer, train_loader, args):
                  list(manager.parameters()) + list(decoder.parameters())
     NLLLoss = nn.NLLLoss(reduction='mean', ignore_index=params.PAD)
 
-    for epoch in range(args.pre_epochs):
+    for epoch in range(args.pre_epoch):
         for step, (src_X, src_y, src_K, _) in enumerate(train_loader):
             src_X = src_X.cuda()
             src_y = src_y.cuda()
@@ -60,7 +60,7 @@ def pre_train(model, optimizer, train_loader, args):
             clip_grad_norm_(parameters, args.grad_clip)
             optimizer.step()
             if step % 50 == 0:
-                print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: loss=%.4f" % (epoch + 1, args.pre_epochs,
+                print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: loss=%.4f" % (epoch + 1, args.pre_epoch,
                                                                          step, len(train_loader),
                                                                          bow_loss.item()))
 
