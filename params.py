@@ -9,6 +9,9 @@ n_hidden = 800
 n_embed = 300
 temperature = 0.8
 
+train_path = "data/train_self_original_no_cands.txt"
+test_path = "data/valid_self_original_no_cands.txt"
+
 model_root = "snapshots"
 encoder_restore = "snapshots/PostKS-encoder.pt"
 Kencoder_restore = "snapshots/PostKS-Kencoder.pt"

@@ -1,5 +1,6 @@
 import random
 import argparse
+import json
 import torch
 from torch import optim
 import torch.nn as nn
@@ -124,16 +125,18 @@ def main():
     n_embed = params.n_embed
     n_batch = args.n_batch
     temperature = 0.8
-    train_path = "train_self_original_no_cands.txt"
-    test_path = "valid_self_original_no_cands.txt"
+    train_path = params.train_path
     assert torch.cuda.is_available()
 
     print("loading_data...")
     vocab = build_vocab(train_path, n_vocab)
+
+    # save vocab
+    with open('vocab.json', 'w') as fp:
+        json.dump(vocab.stoi, fp)
+
     train_X, train_y, train_K = load_data(train_path, vocab)
-    test_X, test_y, test_K = load_data(test_path, vocab)
     train_loader = get_data_loader(train_X, train_y, train_K, n_batch)
-    test_loader = get_data_loader(test_X, test_y, test_K, n_batch)
     print("successfully loaded")
 
     encoder = Encoder(n_vocab, n_embed, n_hidden, n_layer, vocab).cuda()

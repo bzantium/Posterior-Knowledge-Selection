@@ -1,8 +1,9 @@
+import json
 import torch
 import torch.nn as nn
 import params
 import argparse
-from utils import init_model, build_vocab, load_data, get_data_loader
+from utils import init_model, Vocabulary, load_data, get_data_loader
 from model import Encoder, KnowledgeEncoder, Decoder, Manager
 
 
@@ -54,12 +55,18 @@ def main():
     n_embed = 100
     n_batch = args.n_batch
     temperature = 0.8
-    train_path = "train_self_original_no_cands.txt"
-    test_path = "valid_self_original_no_cands.txt"
+    test_path = params.test_path
     assert torch.cuda.is_available()
 
     print("loading_data...")
-    vocab, reverse_vocab = build_vocab(train_path, n_vocab)
+    vocab = Vocabulary()
+
+    with open('vocab.json', 'r') as fp:
+        vocab.stoi = json.load(fp)
+
+    for key, value in vocab.stoi.items():
+        vocab.itos.append(key)
+
     test_X, test_y, test_K = load_data(test_path, vocab)
     test_loader = get_data_loader(test_X, test_y, test_K, n_batch)
     print("successfully loaded")
