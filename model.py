@@ -22,8 +22,7 @@ class Encoder(nn.Module):
         n_batch = X.size(0)
         inputs = self.embedding(X)
         inputs = inputs.transpose(0, 1)
-        seq_lengths = torch.sum(X != 0, dim=-1)  # [n_batch]
-        print(seq_lengths)
+        seq_lengths = torch.sum(X != 0, dim=-1)  # [n_batch]\
         packed_inputs = rnn.pack_padded_sequence(inputs, seq_lengths, enforce_sorted=False)
         packed_outputs, hidden = self.gru(packed_inputs)  # hidden: [2*n_layer, n_batch, n_hidden]
         last_hidden = hidden.view(self.n_layer, 2, n_batch, self.n_hidden)
