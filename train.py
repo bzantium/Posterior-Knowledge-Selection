@@ -50,7 +50,7 @@ def pre_train(model, optimizer, train_loader, args):
 
             y_len = src_y.size(1) - 1
             _, _, _, k_logits = manager(x, y, K) # k_logits: [n_batch, n_vocab]
-            k_logits.repeat(y_len, 1, 1).transpose(0, 2)  # k_logits: [n_batch, n_vocab, y_len]
+            k_logits.repeat(y_len, 1, 1).transpose(0, 1)  # k_logits: [n_batch, n_vocab, y_len]
             bow_loss = NLLLoss(k_logits, src_y[:, 1:])  # src_y[:, 1:]: [n_batch, y_len]
             bow_loss.backward()
             clip_grad_norm_(parameters, args.grad_clip)
@@ -85,7 +85,7 @@ def train(model, optimizer, train_loader, args):
 
             y_len = src_y.size(1) - 1
             _, _, _, k_logits = manager(x, y, K)  # k_logits: [n_batch, n_vocab]
-            k_logits.repeat(y_len, 1, 1).transpose(0, 2)  # k_logits: [n_batch, n_vocab, y_len]
+            k_logits.repeat(y_len, 1, 1).transpose(0, 1)  # k_logits: [n_batch, n_vocab, y_len]
             bow_loss = NLLLoss(k_logits, src_y[:, 1:])  # src_y[:, 1:]: [n_batch, y_len]
 
             n_vocab = decoder.n_vocab
