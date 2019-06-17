@@ -241,3 +241,41 @@ class PersonaDataset(Dataset):
 
     def __len__(self):
         return self.dataset_size
+
+
+def knowledgeToIndex(K, vocab):
+    k1, k2, k3 = K
+    K1 = []
+    K2 = []
+    K3 = []
+
+    for word in k1.split():
+        if word in vocab.stoi:
+            K1.append(vocab.stoi[word])
+        else:
+            K1.append(vocab.stoi["<UNK>"])
+
+    for word in k2.split():
+        if word in vocab.stoi:
+            K2.append(vocab.stoi[word])
+        else:
+            K2.append(vocab.stoi["<UNK>"])
+
+    for word in k3.split():
+        if word in vocab.stoi:
+            K3.append(vocab.stoi[word])
+        else:
+            K3.append(vocab.stoi["<UNK>"])
+
+    K = [K1, K2, K3]
+    seq_len = max([len(k) for k in K])
+
+    K1.extend([0] * (seq_len - len(K1)))
+    K2.extend([0] * (seq_len - len(K2)))
+    K3.extend([0] * (seq_len - len(K3)))
+
+    K1 = torch.LongTensor(K1).unsqueeze(0)
+    K2 = torch.LongTensor(K2).unsqueeze(0)
+    K3 = torch.LongTensor(K3).unsqueeze(0)
+    K = torch.cat((K1, K2, K3), dim=0).unsqueeze(0).cuda()  # K: [1, 3, seq_len]
+    return K
