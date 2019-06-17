@@ -1,5 +1,4 @@
 import math
-import random
 import torch
 import torch.nn as nn
 import torch.nn.utils.rnn as rnn
@@ -101,8 +100,8 @@ class Manager(nn.Module):
         self.n_hidden = n_hidden
         self.n_vocab = n_vocab
         self.temperature = temperature
-        self.mlp = nn.Linear(4*n_hidden, 2*n_hidden)
-        self.mlp_k = nn.Linear(2*n_hidden, n_vocab)
+        self.mlp = nn.Sequential(nn.Linear(4*n_hidden, 2*n_hidden))
+        self.mlp_k = nn.Sequential(nn.Linear(2*n_hidden, n_vocab))
 
     def forward(self, x, y, K):
         # x: [n_batch, 2*n_hidden], y: [n_batch, 2*n_hidden], K: [n_batch, N, 2*n_hidden]
@@ -195,26 +194,3 @@ class Decoder(nn.Module):
         output = self.out(torch.cat((output, context), dim=1))  # [n_batch, n_vocab]
         output = F.log_softmax(output, dim=1)
         return output, hidden, attn_weights
-
-
-class Seq2Seq(nn.Module):
-    def __init__(self, encoder, decoder):
-        super(Seq2Seq, self).__init__()
-        self.encoder = encoder
-        self.decoder = decoder
-
-    def forward(self, src, tgt, k, teacher_forcing_ratio):
-        n_batch = src.size(0)
-        max_len = tgt.size(1)
-        n_vocab = self.decoder.n_vocab
-        outputs = torch.zeros(max_len, n_batch, n_vocab).cuda()
-        encoder_output, hidden = self.encoder(src)
-        hidden = hidden[:self.decoder.n_layer]
-        outputs[0] = tgt.data[:, 0, :]
-        for t in range(1, max_len):
-            output, hidden, attn_weights = self.decoder(output, k, hidden, encoder_output)
-            outputs[t] = output
-            is_teacher = random.random() < teacher_forcing_ratio
-            top1 = output.data.max(1)[1]
-            output = (tgt.data[t] if is_teacher else top1).cuda()
-        return outputs

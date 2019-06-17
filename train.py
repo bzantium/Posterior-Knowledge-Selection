@@ -94,7 +94,7 @@ def train(model, optimizer, train_loader, args):
             max_len = tgt_y.size(1)
 
             outputs = torch.zeros(max_len, n_batch, n_vocab).cuda()
-            hidden = hidden[:decoder.n_layer]
+            hidden = hidden[decoder.n_layer:]
             output = src_y[:, 0]  # [n_batch]
             for t in range(max_len):
                 output, hidden, attn_weights = decoder(output, k_i, hidden, encoder_outputs)
