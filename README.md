@@ -17,7 +17,7 @@
 ```
 $ python train.py -pre_epoch 5 -n_epoch 15 -n_batch 128
 ```
-If you run train, vocab.json and trained parameters will be saved. Then you can run test.
+#### If you run train, vocab.json and trained parameters will be saved. Then you can run test.
 
 <br><br>
 ## Run test
