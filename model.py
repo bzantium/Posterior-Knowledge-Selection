@@ -225,7 +225,7 @@ class Decoder(nn.Module):  # Hierarchical Gated Fusion Unit
         r = torch.sigmoid(self.z_weight(t_hidden))  # [n_layer, n_batch, n_hidden]
         hidden = torch.mul(r, y_hidden) + torch.mul(1-r, k_hidden) # [n_layer, n_batch, n_hidden]
         output = hidden[-1]  # [n_batch, n_hidden]
-        context = context.squeeze(0)  # [n_batch, n_hidden]
+        context = context.squeeze(0)  # [n_batch, 2*n_hidden]
         output = self.out(torch.cat((output, context), dim=1))  # [n_batch, n_vocab]
         output = F.log_softmax(output, dim=1)
         return output, hidden, attn_weights

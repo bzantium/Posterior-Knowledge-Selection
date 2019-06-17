@@ -2,6 +2,7 @@ import os
 import json
 import torch
 import params
+import nltk
 from utils import init_model, Vocabulary, knowledgeToIndex
 from model import Encoder, KnowledgeEncoder, Decoder, Manager
 
@@ -56,7 +57,8 @@ def main():
                 print()
                 break
             X = []
-            for word in utterance.split():
+            utterance = nltk.word_tokenize(utterance)
+            for word in utterance:
                 if word in vocab.stoi:
                     X.append(vocab.stoi[word])
                 else:

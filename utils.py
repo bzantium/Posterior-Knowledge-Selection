@@ -6,6 +6,7 @@ import params
 from copy import copy
 import torch.backends.cudnn as cudnn
 from collections import Counter
+import nltk
 
 
 def sample_gumbel(shape, eps=1e-20):
@@ -78,9 +79,10 @@ def build_vocab(path, n_vocab):
                 if count == 3:
                     continue
                 k_line = line.split("persona:")[1].strip("\n").lower()
+                k_line = nltk.word_tokenize(k_line)
                 count += 1
 
-                for word in k_line.split():
+                for word in k_line:
                     if word in vocab.itos:
                         word_counter[word] += 1
                     else:
@@ -89,14 +91,16 @@ def build_vocab(path, n_vocab):
             elif "__SILENCE__" not in line:
                 X_line = " ".join(line.split("\t")[0].split()[1:]).lower()
                 y_line = line.split("\t")[1].strip("\n").lower()
+                X_line = nltk.word_tokenize(X_line)
+                y_line = nltk.word_tokenize(y_line)
 
-                for word in X_line.split():
+                for word in X_line:
                     if word in vocab.itos:
                         word_counter[word] += 1
                     else:
                         word_counter[word] = 1
 
-                for word in y_line.split():
+                for word in y_line:
                     if word in vocab.itos:
                         word_counter[word] += 1
                     else:
@@ -143,7 +147,8 @@ def load_data(path, vocab):
 
     for line in X:
         X_temp = []
-        for word in line.split():
+        line = nltk.word_tokenize(line)
+        for word in line:
             if word in vocab.stoi:
                 X_temp.append(vocab.stoi[word])
             else:
@@ -152,7 +157,8 @@ def load_data(path, vocab):
 
     for line in y:
         y_temp = []
-        for word in line.split():
+        line = nltk.word_tokenize(line)
+        for word in line:
             if word in vocab.stoi:
                 y_temp.append(vocab.stoi[word])
             else:
@@ -163,7 +169,8 @@ def load_data(path, vocab):
         K_temp = []
         for line in lines:
             k_temp = []
-            for word in line.split():
+            line = nltk.word_tokenize(line)
+            for word in line:
                 if word in vocab.stoi:
                     k_temp.append(vocab.stoi[word])
                 else:
@@ -249,19 +256,23 @@ def knowledgeToIndex(K, vocab):
     K2 = []
     K3 = []
 
-    for word in k1.split():
+    k1 = nltk.word_tokenize(k1)
+    k2 = nltk.word_tokenize(k2)
+    k3 = nltk.word_tokenize(k3)
+
+    for word in k1:
         if word in vocab.stoi:
             K1.append(vocab.stoi[word])
         else:
             K1.append(vocab.stoi["<UNK>"])
 
-    for word in k2.split():
+    for word in k2:
         if word in vocab.stoi:
             K2.append(vocab.stoi[word])
         else:
             K2.append(vocab.stoi["<UNK>"])
 
-    for word in k3.split():
+    for word in k3:
         if word in vocab.stoi:
             K3.append(vocab.stoi[word])
         else:
