@@ -72,6 +72,7 @@ def main():
     K2 = torch.LongTensor(K2).unsqueeze(0)
     K3 = torch.LongTensor(K3).unsqueeze(0)
     K = torch.cat((K1, K2, K3), dim=0).unsqueeze(0).cuda()  # K: [1, 3, seq_len]
+    K = Kencoder(K)
     print()
 
     while(True):
@@ -85,7 +86,6 @@ def main():
         X = torch.LongTensor(X).unsqueeze(0).cuda()  # X: [1, x_seq_len]
 
         encoder_outputs, hidden, x = encoder(X)
-        K = Kencoder(K)
         k_i = manager(x, None, K)
         outputs = torch.zeros(max_len, 1, n_vocab).cuda()  # outputs: [max_len, 1, n_vocab]
         hidden = hidden[decoder.n_layer:]
