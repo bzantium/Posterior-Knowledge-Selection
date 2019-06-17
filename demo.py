@@ -37,10 +37,13 @@ def main():
     decoder = init_model(decoder, restore=params.decoder_restore)
     print("successfully loaded!\n")
 
+    utterance = ""
     while True:
-        k1 = input("Type first Knowledge: ")
-        k2 = input("Type second Knowledge: ")
-        k3 = input("Type third Knowledge: ")
+        if utterance == "exit":
+            break
+        k1 = input("Type first Knowledge: ").lower()
+        k2 = input("Type second Knowledge: ").lower()
+        k3 = input("Type third Knowledge: ").lower()
 
         K = [k1, k2, k3]
         K = knowledgeToIndex(K, vocab)
@@ -48,8 +51,8 @@ def main():
         print()
 
         while True:
-            utterance = input("you: ")
-            if utterance == "change knowledge":
+            utterance = input("you: ").lower()
+            if utterance == "change knowledge" or utterance == "exit":
                 print()
                 break
             X = []
@@ -75,9 +78,9 @@ def main():
 
             answer = ""
             for idx in outputs:
-                answer += vocab.itos[idx] + " "
                 if idx == params.EOS:
                     break
+                answer += vocab.itos[idx] + " "
 
             print("bot:", answer[:-1], "\n")
 
