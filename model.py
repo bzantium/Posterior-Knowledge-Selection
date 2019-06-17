@@ -101,8 +101,8 @@ class Manager(nn.Module):
         self.n_hidden = n_hidden
         self.n_vocab = n_vocab
         self.temperature = temperature
-        self.mlp = nn.Sequential(nn.Linear(4*n_hidden, 2*n_hidden))
-        self.mlp_k = nn.Sequential(nn.Linear(2*n_hidden, n_vocab))
+        self.mlp = nn.Linear(4*n_hidden, 2*n_hidden)
+        self.mlp_k = nn.Linear(2*n_hidden, n_vocab)
 
     def forward(self, x, y, K):
         # x: [n_batch, 2*n_hidden], y: [n_batch, 2*n_hidden], K: [n_batch, N, 2*n_hidden]

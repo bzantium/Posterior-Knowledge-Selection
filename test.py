@@ -1,9 +1,10 @@
+import os
 import json
 import torch
 import torch.nn as nn
 import params
 import argparse
-from utils import init_model, Vocabulary, load_data, get_data_loader
+from utils import init_model, Vocabulary, build_vocab, load_data, get_data_loader
 from model import Encoder, KnowledgeEncoder, Decoder, Manager
 
 
@@ -59,13 +60,17 @@ def main():
     assert torch.cuda.is_available()
 
     print("loading_data...")
-    vocab = Vocabulary()
 
-    with open('vocab.json', 'r') as fp:
-        vocab.stoi = json.load(fp)
+    if os.path.exists("vocab.json"):
+        vocab = Vocabulary()
+        with open('vocab.json', 'r') as fp:
+            vocab.stoi = json.load(fp)
 
-    for key, value in vocab.stoi.items():
-        vocab.itos.append(key)
+        for key, value in vocab.stoi.items():
+            vocab.itos.append(key)
+    else:
+        train_path = params.train_path
+        vocab = build_vocab(train_path, n_vocab)
 
     test_X, test_y, test_K = load_data(test_path, vocab)
     test_loader = get_data_loader(test_X, test_y, test_K, n_batch)
