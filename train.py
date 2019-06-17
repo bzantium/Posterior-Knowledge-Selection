@@ -103,7 +103,7 @@ def train(model, optimizer, train_loader, args):
                 top1 = output.data.max(1)[1]
                 output = tgt_y[:, t] if is_teacher else top1
 
-            outputs = outputs.transpose(0, 1)
+            outputs = outputs.transpose(0, 1).contiguous()
             nll_loss = NLLLoss(outputs.view(-1, n_vocab),
                                tgt_y.contiguous().view(-1))
 
