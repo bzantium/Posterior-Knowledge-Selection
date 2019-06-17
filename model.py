@@ -37,8 +37,8 @@ class Encoder(nn.Module):
         last_hidden = hidden.view(self.n_layer, 2, n_batch, self.n_hidden)
         f_hidden, b_hidden = last_hidden[-1]
         outputs, _ = rnn.pad_packed_sequence(packed_outputs)
-        # outputs = (outputs[:, :, :self.n_hidden] + outputs[:, :, self.n_hidden:])
-        # outputs: [seq_len, n_batch, 2*n_hidden]
+        outputs = (outputs[:, :, :self.n_hidden] + outputs[:, :, self.n_hidden:])
+        # outputs: [seq_len, n_batch, n_hidden]
         encoded = torch.cat((f_hidden, b_hidden), dim=1)  # encoded: [n_batch, 2*n_hidden]
         return outputs, hidden, encoded
 
@@ -129,20 +129,20 @@ class Attention(nn.Module):
     def __init__(self, n_hidden):
         super(Attention, self).__init__()
         self.n_hidden = n_hidden
-        self.attn = nn.Linear(3 * n_hidden, n_hidden)
+        self.attn = nn.Linear(2 * n_hidden, n_hidden)
         self.v = nn.Parameter(torch.rand(n_hidden))
         stdv = 1. / math.sqrt(self.v.size(0))
         self.v.data.uniform_(-stdv, stdv)
 
     def forward(self, hidden, encoder_outputs):  # hidden: [n_batch, n_hidden]
-        seq_len = encoder_outputs.size(0)  # encoder_outputs: [seq_len, n_batch, 2*n_hidden]
+        seq_len = encoder_outputs.size(0)  # encoder_outputs: [seq_len, n_batch, n_hidden]
         h = hidden.repeat(seq_len, 1, 1).transpose(0, 1)  # [n_batch, seq_len, n_hidden]
-        encoder_outputs = encoder_outputs.transpose(0, 1)  # [n_batch, seq_len, 2*n_hidden]
+        encoder_outputs = encoder_outputs.transpose(0, 1)  # [n_batch, seq_len, n_hidden]
         attn_weights = self.score(h, encoder_outputs)  # [n_batch, 1, seq_len]
         return attn_weights
 
     def score(self, hidden, encoder_outputs):
-        # hidden: [n_batch, seq_len, n_hidden], encoder_outputs: [n_batch, seq_len, 2*n_hidden]
+        # hidden: [n_batch, seq_len, n_hidden], encoder_outputs: [n_batch, seq_len, n_hidden]
         attn_scores = torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim=-1)))
         # attn_scores: [n_batch, seq_len, n_hidden]
         v = self.v.repeat(encoder_outputs.size(0), 1).unsqueeze(1)  # [n_batch, 1, n_hidden]
@@ -171,16 +171,16 @@ class Decoder(nn.Module):
         self.y_weight = nn.Linear(n_hidden, n_hidden)
         self.k_weight = nn.Linear(n_hidden, n_hidden)
         self.z_weight = nn.Linear(2 * n_hidden, n_hidden)
-        self.y_gru = nn.GRU(n_embed + 2*n_hidden, n_hidden, n_layer)
-        self.k_gru = nn.GRU(4 * n_hidden, n_hidden, n_layer)
-        self.out = nn.Linear(3 * n_hidden, n_vocab)
+        self.y_gru = nn.GRU(n_embed + n_hidden, n_hidden, n_layer)
+        self.k_gru = nn.GRU(3 * n_hidden, n_hidden, n_layer)
+        self.out = nn.Linear(2 * n_hidden, n_vocab)
 
     def forward(self, input, k, hidden, encoder_outputs):
         # input: [n_batch], k: [n_batch, 2*n_hidden], hidden: [n_layer, n_batch, n_hidden]
         embedded = self.embedding(input).unsqueeze(0)  # [1, n_batch, n_embed]
         attn_weights = self.attention(hidden[-1], encoder_outputs)  # [n_batch, 1, seq_len]
-        context = torch.bmm(attn_weights, encoder_outputs.transpose(0, 1))  # [n_batch, 1, 2*n_hidden]
-        context = context.transpose(0, 1)  # [1, n_batch, 2*n_hidden]
+        context = torch.bmm(attn_weights, encoder_outputs.transpose(0, 1))  # [n_batch, 1, n_hidden]
+        context = context.transpose(0, 1)  # [1, n_batch, n_hidden]
         y_input = torch.cat((embedded, context), dim=-1)
         k_input = torch.cat((k.unsqueeze(0), context), dim=-1)
         y_output, y_hidden = self.y_gru(y_input, hidden)  # y_hidden: [n_layer, n_batch, n_hidden]
