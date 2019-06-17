@@ -12,6 +12,7 @@ For decoder, I apply Hierarchical Gated Fusion Unit (HGFU) [Yao et al. 2017] and
 - pytorch
 - pytorch-nlp
 - nltk
+- nltk.download('punkt')
 
 <br><br>
 ## Train model
