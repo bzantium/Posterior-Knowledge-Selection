@@ -17,56 +17,10 @@
 ```
 $ python train.py -pre_epoch 5 -n_epoch 15 -n_batch 128
 ```
+If you run train, vocab.json and trained parameters will be saved. Then you can run test.
 
 <br><br>
 ## Run test
 ```
 $ python test.py -n_batch 128
-```
-
-<br><br>
-## model
-
-- UtteranceEncoder
-```
-Encoder(
-  (embedding): Embedding(20000, 300)
-  (gru): GRU(300, 800, num_layers=2, bidirectional=True)
-)
-```
-
-- KnowledgeEncoder
-```
-KnowledgeEncoder(
-  (embedding): Embedding(20000, 300)
-  (gru): GRU(300, 800, num_layers=2, bidirectional=True)
-)
-```
-
-- KnowledgeManager
-```
-Manager(
-  (mlp): Sequential(
-    (0): Linear(in_features=3200, out_features=1600, bias=True)
-  )
-  (mlp_k): Sequential(
-    (0): Linear(in_features=1600, out_features=20000, bias=True)
-  )
-)
-```
-
-- Decoder
-```
-Decoder(
-  (embedding): Embedding(20000, 300)
-  (attention): Attention(
-    (attn): Linear(in_features=1600, out_features=800, bias=True)
-  )
-  (y_weight): Linear(in_features=800, out_features=800, bias=True)
-  (k_weight): Linear(in_features=800, out_features=800, bias=True)
-  (z_weight): Linear(in_features=1600, out_features=800, bias=True)
-  (y_gru): GRU(1100, 800, num_layers=2)
-  (k_gru): GRU(2400, 800, num_layers=2)
-  (out): Linear(in_features=1600, out_features=20000, bias=True)
-)
 ```
