@@ -25,7 +25,7 @@ def parse_arguments():
                    help='in case of gradient explosion')
     p.add_argument('-tfr', type=float, default=0.8,
                    help='teacher forcing ratio')
-    p.add_argument('-restore', type=bool, default=False,
+    p.add_argument('-restore', default=False, action='store_true',
                    help='whether restore trained model')
     return p.parse_args()
 
