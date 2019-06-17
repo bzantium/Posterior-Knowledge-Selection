@@ -28,6 +28,14 @@ class Encoder(nn.Module):
                           num_layers=n_layer, bidirectional=True)
 
     def forward(self, X):
+        '''
+        :param X:
+            Variable of shape (n_batch(B), seq_len(T)), which is utterance
+        :return:
+            GRU outputs in shape (T, B, n_hidden(H))
+            last hidden state in shape (2(bi-directional)*n_layer(L), B, H)
+            encoded utterance defined at paper in shape (B, 2*H)
+        '''
         n_batch = X.size(0)
         inputs = self.embedding(X)
         inputs = inputs.transpose(0, 1)
@@ -64,6 +72,13 @@ class KnowledgeEncoder(nn.Module):
                           num_layers=n_layer, bidirectional=True)
 
     def forward(self, K):
+        '''
+        :param K:
+             Variable of shape (B, n_knowledge(N), T) (knowledge)
+             or (B, T), which is y (response)
+        :return:
+            encoded knowledge or encoded response in shape (B, N, 2*H)
+        '''
         if len(K.shape) == 3:  # [n_batch, N, seq_len]
             n_batch = K.size(0)
             N = K.size(1)
@@ -104,7 +119,16 @@ class Manager(nn.Module):
         self.mlp_k = nn.Sequential(nn.Linear(2*n_hidden, n_vocab))
 
     def forward(self, x, y, K):
-        # x: [n_batch, 2*n_hidden], y: [n_batch, 2*n_hidden], K: [n_batch, N, 2*n_hidden]
+        '''
+        :param x:
+            encoded utterance in shape (B, 2*H)
+        :param y:
+            encoded response in shape (B, 2*H) (optional)
+        :param K:
+            encoded knowledge in shape (B, N, 2*H)
+        :return:
+            prior, posterior, selected knowledge, selected knowledge logits for BOW_loss
+        '''
         if y is not None:
             prior = F.log_softmax(torch.bmm(x.unsqueeze(1), K.transpose(-1, -2)), dim=-1).squeeze(1)
             response = self.mlp(torch.cat((x, y), dim=-1))  # response: [n_batch, 2*n_hidden]
@@ -150,7 +174,7 @@ class Attention(nn.Module):
         return attn_weights  # [n_batch, 1, seq_len]
 
 
-class Decoder(nn.Module):
+class Decoder(nn.Module):  # Hierarchical Gated Fusion Unit
     def __init__(self, n_vocab, n_embed, n_hidden, n_layer, vocab=None):
         super(Decoder, self).__init__()
         self.n_vocab = n_vocab
@@ -176,7 +200,18 @@ class Decoder(nn.Module):
         self.out = nn.Linear(2 * n_hidden, n_vocab)
 
     def forward(self, input, k, hidden, encoder_outputs):
-        # input: [n_batch], k: [n_batch, 2*n_hidden], hidden: [n_layer, n_batch, n_hidden]
+        '''
+        :param input:
+            word_input for current time step, in shape (B)
+        :param k:
+            selected knowledge in shape (B, 2*H)
+        :param hidden:
+            last hidden state of the decoder, in shape (L, B, H)
+        :param encoder_outputs:
+            encoder outputs in shape (T, B, H)
+        :return:
+            decoder output, next hidden state of the decoder, attention weights
+        '''
         embedded = self.embedding(input).unsqueeze(0)  # [1, n_batch, n_embed]
         attn_weights = self.attention(hidden[-1], encoder_outputs)  # [n_batch, 1, seq_len]
         context = torch.bmm(attn_weights, encoder_outputs.transpose(0, 1))  # [n_batch, 1, n_hidden]
