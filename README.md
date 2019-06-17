@@ -14,10 +14,10 @@
 
 <br><br>
 ## Train model
+#### If you run train, vocab.json and trained parameters will be saved. Then you can play demo.
 ```
 $ python train.py -pre_epoch 5 -n_epoch 15 -n_batch 128
 ```
-#### If you run train, vocab.json and trained parameters will be saved. Then you can play demo.
 
 <br><br>
 ## Play demo
@@ -34,8 +34,8 @@ Type third Knowledge: i have brown hair.
 you: hi ! i work as a gourmet cook .
 bot(response): i don't like carrots . i throw them away . # reponse can change based on training.
 ```
-#### If you type "change knowledge" at (you), you can retype three knowledge.
-#### If you type "exit" at (you), you can terminate demo.
+- If you type "change knowledge" at (you), you can retype three knowledge.
+- If you type "exit" at (you), you can terminate demo.
 
 
 <br><br>
