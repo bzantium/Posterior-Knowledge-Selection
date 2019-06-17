@@ -8,6 +8,7 @@ import torch.backends.cudnn as cudnn
 from collections import Counter
 import nltk
 
+nltk.download('punkt')
 
 def sample_gumbel(shape, eps=1e-20):
     U = torch.rand(shape).cuda()
