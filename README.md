@@ -13,16 +13,26 @@
 - pytorch-nlp
 
 <br><br>
-## Run train
+## Train model
 ```
 $ python train.py -pre_epoch 5 -n_epoch 15 -n_batch 128
 ```
-#### If you run train, vocab.json and trained parameters will be saved. Then you can run test.
+#### If you run train, vocab.json and trained parameters will be saved. Then you can play demo.
 
 <br><br>
-## Run test
+## Play demo
 ```
-$ python test.py -n_batch 128
+$ python demo.py
+```
+#### You need to first type three knowledges and utterance. Then bot will reply!
+```
+# example
+Type first Knowledge: i'm very athletic.
+Type second Knowledge: i wear contacts.
+Type third Knowledge: i have brown hair.
+
+you: hi ! i work as a gourmet cook .
+bot(response): i don't like carrots . i throw them away . # reponse can change based on training.
 ```
 
 <br><br>
