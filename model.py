@@ -107,7 +107,7 @@ class Manager(nn.Module):
     def forward(self, x, y, K):
         # x: [n_batch, 2*n_hidden], y: [n_batch, 2*n_hidden], K: [n_batch, N, 2*n_hidden]
         if y is not None:
-            prior = F.softmax(torch.bmm(x.unsqueeze(1), K.transpose(-1, -2)), dim=-1).squeeze(1)
+            prior = F.log_softmax(torch.bmm(x.unsqueeze(1), K.transpose(-1, -2)), dim=-1).squeeze(1)
             response = self.mlp(torch.cat((x, y), dim=-1))  # response: [n_batch, 2*n_hidden]
             K = K.transpose(-1, -2)  # K: [n_batch, 2*n_hidden, N]
             posterior_logits = torch.bmm(response.unsqueeze(1), K).squeeze(1)
