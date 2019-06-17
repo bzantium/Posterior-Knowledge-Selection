@@ -6,7 +6,6 @@ import params
 from copy import copy
 import torch.backends.cudnn as cudnn
 from collections import Counter
-import spacy
 import nltk
 
 
@@ -70,7 +69,6 @@ def build_vocab(path, n_vocab):
 
         initial_vocab_size = len(vocab.stoi)
         vocab_idx = initial_vocab_size
-        tokenizer = spacy.load('en_core_web_sm')
 
         for line in file:
             dialog_id = line.split()[0]
@@ -81,8 +79,7 @@ def build_vocab(path, n_vocab):
                 if count == 3:
                     continue
                 k_line = line.split("persona:")[1].strip("\n").lower()
-                k_line = tokenizer(k_line)
-                tokens = [token.text for token in k_line]
+                tokens = nltk.word_tokenize(k_line)
                 count += 1
 
                 for word in tokens:
@@ -93,8 +90,7 @@ def build_vocab(path, n_vocab):
 
             elif "__SILENCE__" not in line:
                 X_line = " ".join(line.split("\t")[0].split()[1:]).lower()
-                X_line = tokenizer(X_line)
-                tokens = [token.text for token in X_line]
+                tokens = nltk.word_tokenize(X_line)
 
                 for word in tokens:
                     if word in vocab.itos:
@@ -103,8 +99,7 @@ def build_vocab(path, n_vocab):
                         word_counter[word] = 1
 
                 y_line = line.split("\t")[1].strip("\n").lower()
-                y_line = tokenizer(y_line)
-                tokens = [token.text for token in y_line]
+                tokens = nltk.word_tokenize(y_line)
 
                 for word in tokens:
                     if word in vocab.itos:
@@ -150,13 +145,10 @@ def load_data(path, vocab):
     X_ind = []
     y_ind = []
     K_ind = []
-    tokenizer = spacy.load('en_core_web_sm')
 
     for line in X:
         X_temp = []
-        line = tokenizer(line)
-        tokens = [token.text for token in line]
-
+        tokens = nltk.word_tokenize(line)
         for word in tokens:
             if word in vocab.stoi:
                 X_temp.append(vocab.stoi[word])
@@ -166,9 +158,7 @@ def load_data(path, vocab):
 
     for line in y:
         y_temp = []
-        line = tokenizer(line)
-        tokens = [token.text for token in line]
-
+        tokens = nltk.word_tokenize(line)
         for word in tokens:
             if word in vocab.stoi:
                 y_temp.append(vocab.stoi[word])
@@ -180,9 +170,7 @@ def load_data(path, vocab):
         K_temp = []
         for line in lines:
             k_temp = []
-            line = tokenizer(line)
-            tokens = [token.text for token in line]
-
+            tokens = nltk.word_tokenize(line)
             for word in tokens:
                 if word in vocab.stoi:
                     k_temp.append(vocab.stoi[word])
@@ -264,33 +252,26 @@ class PersonaDataset(Dataset):
 
 
 def knowledgeToIndex(K, vocab):
-    tokenizer = spacy.load('en_core_web_sm')
     k1, k2, k3 = K
     K1 = []
     K2 = []
     K3 = []
 
-    k1 = tokenizer(k1)
-    tokens = [token.text for token in k1]
-
+    tokens = nltk.word_tokenize(k1)
     for word in tokens:
         if word in vocab.stoi:
             K1.append(vocab.stoi[word])
         else:
             K1.append(vocab.stoi["<UNK>"])
 
-    k2 = tokenizer(k2)
-    tokens = [token.text for token in k2]
-
+    tokens = nltk.word_tokenize(k2)
     for word in tokens:
         if word in vocab.stoi:
             K2.append(vocab.stoi[word])
         else:
             K2.append(vocab.stoi["<UNK>"])
 
-    k3 = tokenizer(k3)
-    tokens = [token.text for token in k3]
-
+    tokens = nltk.word_tokenize(k3)
     for word in tokens:
         if word in vocab.stoi:
             K3.append(vocab.stoi[word])
