@@ -11,7 +11,7 @@ For decoder, I apply Hierarchical Gated Fusion Unit (HGFU) [Yao et al. 2017] and
 ## Requirement
 - pytorch
 - pytorch-nlp
-- spacy
+- nltk
 
 <br><br>
 ## Train model
