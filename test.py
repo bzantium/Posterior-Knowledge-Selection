@@ -41,7 +41,7 @@ def evaluate(model, test_loader):
             outputs[t] = output
             output = output.data.max(1)[1]
 
-        loss = NLLLoss(outputs.view(-1, n_vocab),
+        loss = NLLLoss(outputs.transpose(0, 1).view(-1, n_vocab),
                            tgt_y.contiguous().view(-1))
         total_loss += loss.item()
     total_loss /= len(test_loader)
