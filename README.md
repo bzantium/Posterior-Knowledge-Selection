@@ -24,3 +24,7 @@ $ python train.py -pre_epoch 5 -n_epoch 15 -n_batch 128
 ```
 $ python test.py -n_batch 128
 ```
+
+<br><br>
+## DataSet
+#### I only use "self_origianl_no_cands" in Persona-chat released by ParlAI
