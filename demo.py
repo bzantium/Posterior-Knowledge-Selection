@@ -2,7 +2,7 @@ import os
 import json
 import torch
 import params
-import nltk
+import spacy
 from utils import init_model, Vocabulary, knowledgeToIndex
 from model import Encoder, KnowledgeEncoder, Decoder, Manager
 
@@ -38,6 +38,7 @@ def main():
     decoder = init_model(decoder, restore=params.decoder_restore)
     print("successfully loaded!\n")
 
+    tokenizer = spacy.load('en_core_web_sm')
     utterance = ""
     while True:
         if utterance == "exit":
@@ -57,8 +58,10 @@ def main():
                 print()
                 break
             X = []
-            utterance = nltk.word_tokenize(utterance)
-            for word in utterance:
+            utterance = tokenizer(utterance)
+            tokens = [token.text for token in utterance]
+
+            for word in tokens:
                 if word in vocab.stoi:
                     X.append(vocab.stoi[word])
                 else:
