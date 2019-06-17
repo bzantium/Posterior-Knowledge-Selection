@@ -173,7 +173,7 @@ class Decoder(nn.Module):
         self.z_weight = nn.Linear(2 * n_hidden, n_hidden)
         self.y_gru = nn.GRU(n_embed + 2*n_hidden, n_hidden, n_layer)
         self.k_gru = nn.GRU(4 * n_hidden, n_hidden, n_layer)
-        self.out = nn.Linear(2 * n_hidden, n_vocab)
+        self.out = nn.Linear(3 * n_hidden, n_vocab)
 
     def forward(self, input, k, hidden, encoder_outputs):
         # input: [n_batch], k: [n_batch, 2*n_hidden], hidden: [n_layer, n_batch, n_hidden]
