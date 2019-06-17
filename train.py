@@ -34,7 +34,7 @@ def pre_train(model, optimizer, train_loader, args):
     encoder, Kencoder, manager, decoder = [*model]
     encoder.train(), Kencoder.train(), manager.train(), decoder.train()
     parameters = list(encoder.parameters()) + list(Kencoder.parameters()) + \
-                 list(manager.parameters()) + list(decoder.parameters())
+                 list(manager.parameters())
     NLLLoss = nn.NLLLoss(reduction='mean', ignore_index=params.PAD)
 
     for epoch in range(args.pre_epoch):
