@@ -24,7 +24,7 @@ $ python train.py -pre_epoch 5 -n_epoch 15 -n_batch 128
 ```
 $ python demo.py
 ```
-#### You need to first type three knowledges and utterance. Then bot will reply!
+#### You need to type three knowledges and utterance. Then bot will reply!
 ```
 # example
 Type first Knowledge: i'm very athletic.
