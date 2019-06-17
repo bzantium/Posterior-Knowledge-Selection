@@ -57,9 +57,9 @@ def pre_train(model, optimizer, train_loader, args):
             clip_grad_norm_(parameters, args.grad_clip)
             optimizer.step()
             if step % 50 == 0:
-                print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: loss=%.4f" % (epoch + 1, args.pre_epoch,
-                                                                         step, len(train_loader),
-                                                                         bow_loss.item()))
+                print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: bow_loss=%.4f" % (epoch + 1, args.pre_epoch,
+                                                                             step, len(train_loader),
+                                                                             bow_loss.item()))
 
 
 def train(model, optimizer, train_loader, args):
