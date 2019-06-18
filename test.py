@@ -31,10 +31,10 @@ def evaluate(model, test_loader):
         k_i = manager(x, None, K)
         n_batch = src_X.size(0)
         max_len = tgt_y.size(1)
-        n_vocab = decoder.n_vocab
+        n_vocab = params.n_vocab
 
         outputs = torch.zeros(max_len, n_batch, n_vocab).cuda()
-        hidden = hidden[decoder.n_layer:]
+        hidden = hidden[params.n_layer:]
         output = torch.LongTensor([params.SOS] * n_batch).cuda()  # [n_batch]
         for t in range(max_len):
             output, hidden, attn_weights = decoder(output, k_i, hidden, encoder_outputs)

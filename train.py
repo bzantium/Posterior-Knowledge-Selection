@@ -84,7 +84,7 @@ def train(model, optimizer, train_loader, args):
             prior, posterior, k_i, k_logits = manager(x, y, K)
             kldiv_loss = KLDLoss(prior, posterior.detach())
 
-            n_vocab = decoder.n_vocab
+            n_vocab = params.n_vocab
             seq_len = src_y.size(1) - 1
             k_logits = k_logits.repeat(seq_len, 1, 1).transpose(0, 1).contiguous().view(-1, n_vocab)
             bow_loss = NLLLoss(k_logits, src_y[:, 1:].contiguous().view(-1))
@@ -93,7 +93,7 @@ def train(model, optimizer, train_loader, args):
             max_len = tgt_y.size(1)
 
             outputs = torch.zeros(max_len, n_batch, n_vocab).cuda()
-            hidden = hidden[decoder.n_layer:]
+            hidden = hidden[params.n_layer:]
             output = src_y[:, 0]  # [n_batch]
             for t in range(max_len):
                 output, hidden, attn_weights = decoder(output, k_i, hidden, encoder_outputs)
