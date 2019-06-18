@@ -1,7 +1,7 @@
 ## PostKS (Posterior Knowledge Selection)
 
 #### Pytorch implementation of [Learning to Select Knowledge for Response Generation in Dialog Systems](https://arxiv.org/pdf/1902.04911.pdf)
-For decoder, I apply Hierarchical Gated Fusion Unit (HGFU) [Yao et al. 2017] and I only use three number of knowledges for the sake of code simplicity.
+For decoder, I apply Hierarchical Gated Fusion Unit (HGFU) [[Yao et al. 2017](https://www.aclweb.org/anthology/D17-1233)] and I only use three number of knowledges for the sake of code simplicity.
 
 <p align="center">
   <img src="https://github.com/bzantium/PostKS/blob/master/image/architecture.PNG">
