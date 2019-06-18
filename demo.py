@@ -49,13 +49,13 @@ def main():
 
         k2 = input("Type second Knowledge: ").lower()
         while not k2:
-            print("Please type first Knowledge.\n")
-            k2 = input("Type first Knowledge: ").lower()
+            print("Please type second Knowledge.\n")
+            k2 = input("Type second Knowledge: ").lower()
 
         k3 = input("Type third Knowledge: ").lower()
         while not k3:
-            print("Please type first Knowledge.\n")
-            k3 = input("Type first Knowledge: ").lower()
+            print("Please type third Knowledge.\n")
+            k3 = input("Type third Knowledge: ").lower()
 
         K = [k1, k2, k3]
         K = knowledgeToIndex(K, vocab)
