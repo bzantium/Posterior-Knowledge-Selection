@@ -43,17 +43,17 @@ def main():
         if utterance == "exit":
             break
         k1 = input("Type first Knowledge: ").lower()
-        while len(k1) != 0:
+        while not k1:
             print("Please type first Knowledge.\n")
             k1 = input("Type first Knowledge: ").lower()
 
         k2 = input("Type second Knowledge: ").lower()
-        while len(k2) != 0:
+        while not k2:
             print("Please type first Knowledge.\n")
             k2 = input("Type first Knowledge: ").lower()
 
         k3 = input("Type third Knowledge: ").lower()
-        while len(k3) != 0:
+        while not k3:
             print("Please type first Knowledge.\n")
             k3 = input("Type first Knowledge: ").lower()
 
