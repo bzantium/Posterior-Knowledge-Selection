@@ -58,10 +58,10 @@ def pre_train(model, optimizer, train_loader, args):
             clip_grad_norm_(parameters, args.grad_clip)
             optimizer.step()
             b_loss += bow_loss.item()
-            if step % 50 == 0:
+            if (step + 1) % 50 == 0:
                 b_loss /= 50
                 print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: bow_loss=%.4f" % (epoch + 1, args.pre_epoch,
-                                                                             step, len(train_loader),
+                                                                             step + 1, len(train_loader),
                                                                              b_loss))
                 b_loss = 0
         # save models
@@ -126,14 +126,14 @@ def train(model, optimizer, train_loader, args):
             n_loss += nll_loss.item()
             t_loss += loss.item()
 
-            if step % 50 == 0:
+            if (step + 1) % 50 == 0:
                 k_loss /= 50
                 n_loss /= 50
                 b_loss /= 50
                 t_loss /= 50
                 print("Epoch [%.2d/%.2d] Step [%.4d/%.4d]: total_loss=%.4f kldiv_loss=%.4f bow_loss=%.4f nll_loss=%.4f"
                       % (epoch + 1, args.n_epoch,
-                         step, len(train_loader),
+                         step + 1, len(train_loader),
                          t_loss, k_loss, b_loss, n_loss))
                 k_loss = 0
                 n_loss = 0
