@@ -55,6 +55,17 @@ def save_model(net, filename):
     print("save pretrained model to: {}".format(filename))
 
 
+def save_models(model, filenames):
+    """Save trained model."""
+    if not os.path.exists(params.model_root):
+        os.makedirs(params.model_root)
+    for i in range(len(model)):
+        net = model[i]
+        filename = filenames[i]
+        torch.save(net.state_dict(), filename)
+        print("save pretrained model to: {}".format(filename))
+
+
 def build_vocab(path, n_vocab):
     with open(path, errors="ignore") as file:
         word_counter = Counter()

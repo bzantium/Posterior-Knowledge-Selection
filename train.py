@@ -6,7 +6,7 @@ from torch import optim
 import torch.nn as nn
 from torch.nn.utils import clip_grad_norm_
 import params
-from utils import init_model, save_model, \
+from utils import init_model, save_models, \
     build_vocab, load_data, get_data_loader
 from model import Encoder, KnowledgeEncoder, Decoder, Manager
 
@@ -23,7 +23,7 @@ def parse_arguments():
                    help='initial learning rate')
     p.add_argument('-grad_clip', type=float, default=10.0,
                    help='in case of gradient explosion')
-    p.add_argument('-tfr', type=float, default=0.8,
+    p.add_argument('-tfr', type=float, default=0.5,
                    help='teacher forcing ratio')
     p.add_argument('-restore', default=False, action='store_true',
                    help='whether restore trained model')
@@ -38,6 +38,7 @@ def pre_train(model, optimizer, train_loader, args):
     NLLLoss = nn.NLLLoss(reduction='mean', ignore_index=params.PAD)
 
     for epoch in range(args.pre_epoch):
+        b_loss = 0
         for step, (src_X, src_y, src_K, _) in enumerate(train_loader):
             src_X = src_X.cuda()
             src_y = src_y.cuda()
@@ -56,10 +57,15 @@ def pre_train(model, optimizer, train_loader, args):
             bow_loss.backward()
             clip_grad_norm_(parameters, args.grad_clip)
             optimizer.step()
+            b_loss += bow_loss.item()
             if step % 50 == 0:
+                b_loss /= 50
                 print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: bow_loss=%.4f" % (epoch + 1, args.pre_epoch,
                                                                              step, len(train_loader),
-                                                                             bow_loss.item()))
+                                                                             b_loss))
+                b_loss = 0
+        # save models
+        save_models(model, params.all_restore)
 
 
 def train(model, optimizer, train_loader, args):
@@ -71,6 +77,10 @@ def train(model, optimizer, train_loader, args):
     KLDLoss = nn.KLDivLoss(reduction='batchmean')
 
     for epoch in range(args.n_epoch):
+        b_loss = 0
+        k_loss = 0
+        n_loss = 0
+        t_loss = 0
         for step, (src_X, src_y, src_K, tgt_y) in enumerate(train_loader):
             src_X = src_X.cuda()
             src_y = src_y.cuda()
@@ -79,6 +89,7 @@ def train(model, optimizer, train_loader, args):
 
             optimizer.zero_grad()
             encoder_outputs, hidden, x = encoder(src_X)
+            encoder_mask = (src_X == 0).unsqueeze(1).byte()
             y = Kencoder(src_y)
             K = Kencoder(src_K)
             prior, posterior, k_i, k_logits = manager(x, y, K)
@@ -94,9 +105,9 @@ def train(model, optimizer, train_loader, args):
 
             outputs = torch.zeros(max_len, n_batch, n_vocab).cuda()
             hidden = hidden[params.n_layer:]
-            output = src_y[:, 0]  # [n_batch]
+            output = torch.LongTensor([params.SOS] * n_batch).cuda()  # [n_batch]
             for t in range(max_len):
-                output, hidden, attn_weights = decoder(output, k_i, hidden, encoder_outputs)
+                output, hidden, attn_weights = decoder(output, k_i, hidden, encoder_outputs, encoder_mask)
                 outputs[t] = output
                 is_teacher = random.random() < args.tfr  # teacher forcing ratio
                 top1 = output.data.max(1)[1]
@@ -110,18 +121,26 @@ def train(model, optimizer, train_loader, args):
             loss.backward()
             clip_grad_norm_(parameters, args.grad_clip)
             optimizer.step()
+            b_loss += bow_loss.item()
+            k_loss += kldiv_loss.item()
+            n_loss += nll_loss.item()
+            t_loss += loss.item()
 
             if step % 50 == 0:
+                k_loss /= 50
+                n_loss /= 50
+                b_loss /= 50
+                t_loss /= 50
                 print("Epoch [%.2d/%.2d] Step [%.4d/%.4d]: total_loss=%.4f kldiv_loss=%.4f bow_loss=%.4f nll_loss=%.4f"
                       % (epoch + 1, args.n_epoch,
                          step, len(train_loader),
-                         loss.item(), kldiv_loss.item(),
-                         bow_loss.item(), nll_loss.item()))
-        if (epoch + 1) % 3 == 0:
-            save_model(encoder, params.encoder_restore)
-            save_model(Kencoder, params.Kencoder_restore)
-            save_model(manager, params.manager_restore)
-            save_model(decoder, params.decoder_restore)
+                         t_loss, k_loss, b_loss, n_loss))
+                k_loss = 0
+                n_loss = 0
+                b_loss = 0
+                t_loss = 0
+        # save models
+        save_models(model, params.all_restore)
 
 
 def main():
