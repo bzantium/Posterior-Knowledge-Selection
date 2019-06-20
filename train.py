@@ -188,10 +188,7 @@ def main():
     train(model, optimizer, train_loader, args)
 
     # save final model
-    save_model(encoder, params.encoder_restore)
-    save_model(Kencoder, params.Kencoder_restore)
-    save_model(manager, params.manager_restore)
-    save_model(decoder, params.decoder_restore)
+    save_models(model, params.all_restore)
 
 
 if __name__ == "__main__":
