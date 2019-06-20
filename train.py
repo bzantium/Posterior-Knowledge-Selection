@@ -89,9 +89,7 @@ def train(model, optimizer, train_loader, args):
 
             optimizer.zero_grad()
             encoder_outputs, hidden, x = encoder(src_X)
-            encoder_mask = (src_X == 0).unsqueeze(1).byte()
-            print(encoder_outputs.shape)
-            print(encoder_mask.shape)
+            encoder_mask = (src_X == 0)[:, :encoder_outputs.size(2)].unsqueeze(1).byte()
             y = Kencoder(src_y)
             K = Kencoder(src_K)
             prior, posterior, k_i, k_logits = manager(x, y, K)
