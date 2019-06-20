@@ -5,6 +5,7 @@ import torch.nn.utils.rnn as rnn
 import torch.nn.functional as F
 from torchnlp.word_to_vector import GloVe
 from utils import gumbel_softmax
+import params
 
 
 class Encoder(nn.Module):
