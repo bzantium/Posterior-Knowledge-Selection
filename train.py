@@ -89,7 +89,7 @@ def train(model, optimizer, train_loader, args):
 
             optimizer.zero_grad()
             encoder_outputs, hidden, x = encoder(src_X)
-            encoder_mask = (src_X == 0)[:, :encoder_outputs.size(2)].unsqueeze(1).byte()
+            encoder_mask = (src_X == 0)[:, :encoder_outputs.size(0)].unsqueeze(1).byte()
             y = Kencoder(src_y)
             K = Kencoder(src_K)
             prior, posterior, k_i, k_logits = manager(x, y, K)
@@ -151,7 +151,7 @@ def main():
     n_embed = params.n_embed
     n_batch = args.n_batch
     temperature = params.temperature
-    train_path = params.test_path
+    train_path = params.train_path
     assert torch.cuda.is_available()
 
     print("loading_data...")
