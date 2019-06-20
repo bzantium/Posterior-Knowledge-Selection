@@ -170,7 +170,7 @@ class Attention(nn.Module):
         attn_scores = torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim=-1)))
         # attn_scores: [n_batch, seq_len, n_hidden]
         v = self.v.repeat(encoder_outputs.size(0), 1).unsqueeze(1)  # [n_batch, 1, n_hidden]
-        attn_scores = torch.bmm(v, attn_scores.transpose(1, 2))
+        attn_scores = torch.bmm(v, attn_scores.transpose(1, 2))  # [n_batch, 1, seq_len]
         if encoder_mask is not None:
             attn_scores.masked_fill_(encoder_mask, -1e9)
         attn_weights = F.softmax(attn_scores, dim=-1)  # [n_batch, 1, seq_len]
