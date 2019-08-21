@@ -42,4 +42,4 @@ bot(response): i don't like carrots . i throw them away . # reponse can change b
 
 <br><br>
 ## DataSet
-#### I only use "self_original_no_cands" in Persona-chat released by ParlAI
+- I only use "self_original_no_cands" in Persona-chat released by ParlAI
