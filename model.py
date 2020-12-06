@@ -20,7 +20,7 @@ class Encoder(nn.Module):
             embedding = torch.Tensor(n_vocab, n_embed)
             vectors = GloVe()
             for word in vocab.stoi:
-                if word in vectors.stoi:
+                if word in vectors:
                     embedding[vocab.stoi[word]] = vectors[word]
             self.embedding = nn.Embedding.from_pretrained(embedding)
             print("encoder embedding is initialized with Glove")
@@ -64,7 +64,7 @@ class KnowledgeEncoder(nn.Module):
             embedding = torch.Tensor(n_vocab, n_embed)
             vectors = GloVe()
             for word in vocab.stoi:
-                if word in vectors.stoi:
+                if word in vectors:
                     embedding[vocab.stoi[word]] = vectors[word]
             self.embedding = nn.Embedding.from_pretrained(embedding)
             print("Kencoder embedding is initialized with Glove")
