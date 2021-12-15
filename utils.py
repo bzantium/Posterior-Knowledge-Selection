@@ -1,13 +1,14 @@
 import os
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 import params
-from copy import copy
-import torch.backends.cudnn as cudnn
 from collections import Counter
+import pickle
 import nltk
-
+import gzip
+import json
 
 def sample_gumbel(shape, eps=1e-20):
     U = torch.rand(shape).cuda()
@@ -40,10 +41,8 @@ def init_model(net, restore=None):
         net.load_state_dict(torch.load(restore))
         print("Restore model from: {}".format(os.path.abspath(restore)))
 
-    # check if cuda is available
-    if torch.cuda.is_available():
-        cudnn.benchmark = True
-        net.cuda()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    net.to(device)
     return net
 
 
@@ -66,63 +65,101 @@ def save_models(model, filenames):
         print("save pretrained model to: {}".format(filename))
 
 
+def pickle_glove_vectors():
+    glove_vectors = {}
+    print("Start loading tensors from text file")
+    with open("gloves/glove.840B.300d.txt", "r") as f:
+        for line in f:
+            split_line = line.split()
+            word = split_line[0]
+            try:
+                glove_vectors[word] = torch.FloatTensor(np.array(split_line[1:], dtype=np.float32))
+            except:
+                pass
+    print("Start to pickle glove vectors...")
+    with gzip.open("gloves/glove_vectors.pkl", "wb") as f:
+        pickle.dump(glove_vectors, f)
+    print("Tensors are saved to gloves/glove_vectors.pkl")
+
+
+def load_glove_vectors():
+    print("Loading glove vectors")
+    if os.path.exists("gloves/glove_vectors.pkl"):
+        with gzip.open("gloves/glove_vectors.pkl", "rb") as f:
+            glove_vectors = pickle.load(f)
+    print(f"{len(glove_vectors)} words loaded!")
+    return glove_vectors
+
+
 def build_vocab(path, n_vocab):
-    with open(path, errors="ignore") as file:
-        word_counter = Counter()
+    if os.path.exists("vocab.json"):
+        print("Load vocab from vocab.json")
         vocab = Vocabulary()
-        # vocab = dict()
-        # reverse_vocab = dict()
-        vocab.stoi['<PAD>'] = params.PAD
-        vocab.stoi['<UNK>'] = params.UNK
-        vocab.stoi['<SOS>'] = params.SOS
-        vocab.stoi['<EOS>'] = params.EOS
-
-        initial_vocab_size = len(vocab.stoi)
-        vocab_idx = initial_vocab_size
-
-        for line in file:
-            dialog_id = line.split()[0]
-            if dialog_id == "1":
-                count = 0
-
-            if "your persona:" in line:
-                if count == 3:
-                    continue
-                k_line = line.split("persona:")[1].strip("\n").lower()
-                tokens = nltk.word_tokenize(k_line)
-                count += 1
-
-                for word in tokens:
-                    if word in vocab.itos:
-                        word_counter[word] += 1
-                    else:
-                        word_counter[word] = 1
-
-            elif "__SILENCE__" not in line:
-                X_line = " ".join(line.split("\t")[0].split()[1:]).lower()
-                tokens = nltk.word_tokenize(X_line)
-
-                for word in tokens:
-                    if word in vocab.itos:
-                        word_counter[word] += 1
-                    else:
-                        word_counter[word] = 1
-
-                y_line = line.split("\t")[1].strip("\n").lower()
-                tokens = nltk.word_tokenize(y_line)
-
-                for word in tokens:
-                    if word in vocab.itos:
-                        word_counter[word] += 1
-                    else:
-                        word_counter[word] = 1
-
-        for key, _ in word_counter.most_common(n_vocab - initial_vocab_size):
-            vocab.stoi[key] = vocab_idx
-            vocab_idx += 1
-
-        for key, value in vocab.stoi.items():
+        with open("vocab.json", "r") as f:
+            vocab.stoi = json.load(f)
+        for key in vocab.stoi.keys():
             vocab.itos.append(key)
+    else:
+        print("Build vocab...")
+        with open(path, errors="ignore") as file:
+            word_counter = Counter()
+            vocab = Vocabulary()
+            # vocab = dict()
+            # reverse_vocab = dict()
+            vocab.stoi['<PAD>'] = params.PAD
+            vocab.stoi['<UNK>'] = params.UNK
+            vocab.stoi['<SOS>'] = params.SOS
+            vocab.stoi['<EOS>'] = params.EOS
+
+            initial_vocab_size = len(vocab.stoi)
+            vocab_idx = initial_vocab_size
+
+            for line in file:
+                dialog_id = line.split()[0]
+                if dialog_id == "1":
+                    count = 0
+
+                if "your persona:" in line:
+                    if count == 3:
+                        continue
+                    k_line = line.split("persona:")[1].strip("\n").lower()
+                    tokens = nltk.word_tokenize(k_line)
+                    count += 1
+
+                    for word in tokens:
+                        if word in vocab.itos:
+                            word_counter[word] += 1
+                        else:
+                            word_counter[word] = 1
+
+                elif "__SILENCE__" not in line:
+                    X_line = " ".join(line.split("\t")[0].split()[1:]).lower()
+                    tokens = nltk.word_tokenize(X_line)
+
+                    for word in tokens:
+                        if word in vocab.itos:
+                            word_counter[word] += 1
+                        else:
+                            word_counter[word] = 1
+
+                    y_line = line.split("\t")[1].strip("\n").lower()
+                    tokens = nltk.word_tokenize(y_line)
+
+                    for word in tokens:
+                        if word in vocab.itos:
+                            word_counter[word] += 1
+                        else:
+                            word_counter[word] = 1
+
+            for key, _ in word_counter.most_common(n_vocab - initial_vocab_size):
+                vocab.stoi[key] = vocab_idx
+                vocab_idx += 1
+
+            for key in vocab.stoi.keys():
+                vocab.itos.append(key)
+
+        with open('vocab.json', 'w') as fp:
+            json.dump(vocab.stoi, fp)
 
     return vocab
 
@@ -228,8 +265,8 @@ class PersonaDataset(Dataset):
             src_X.append(line)
 
         for line in y:
-            src_line = copy(line)
-            tgt_line = copy(line)
+            src_line = line[:]
+            tgt_line = line[:]
             src_line.insert(0, params.SOS)
             tgt_line.append(params.EOS)
             src_line.extend([params.PAD] * (y_len - len(src_line) + 1))
@@ -300,3 +337,7 @@ def knowledgeToIndex(K, vocab):
     K3 = torch.LongTensor(K3).unsqueeze(0)
     K = torch.cat((K1, K2, K3), dim=0).unsqueeze(0).cuda()  # K: [1, 3, seq_len]
     return K
+
+
+if __name__ == "__main__":
+    pickle_glove_vectors()

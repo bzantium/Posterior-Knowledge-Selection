@@ -19,15 +19,18 @@ def parse_arguments():
                    help='number of epochs for train')
     p.add_argument('-n_batch', type=int, default=128,
                    help='number of batches for train')
-    p.add_argument('-lr', type=float, default=5e-4,
+    p.add_argument('-lr', type=float, default=1e-4,
                    help='initial learning rate')
-    p.add_argument('-grad_clip', type=float, default=10.0,
+    p.add_argument('-grad_clip', type=float, default=5.0,
                    help='in case of gradient explosion')
     p.add_argument('-tfr', type=float, default=0.5,
                    help='teacher forcing ratio')
     p.add_argument('-restore', default=False, action='store_true',
                    help='whether restore trained model')
     return p.parse_args()
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def pre_train(model, optimizer, train_loader, args):
@@ -40,9 +43,9 @@ def pre_train(model, optimizer, train_loader, args):
     for epoch in range(args.pre_epoch):
         b_loss = 0
         for step, (src_X, src_y, src_K, _) in enumerate(train_loader):
-            src_X = src_X.cuda()
-            src_y = src_y.cuda()
-            src_K = src_K.cuda()
+            src_X = src_X.to(device)
+            src_y = src_y.to(device)
+            src_K = src_K.to(device)
 
             optimizer.zero_grad()
             _, _, x = encoder(src_X)
@@ -82,10 +85,10 @@ def train(model, optimizer, train_loader, args):
         n_loss = 0
         t_loss = 0
         for step, (src_X, src_y, src_K, tgt_y) in enumerate(train_loader):
-            src_X = src_X.cuda()
-            src_y = src_y.cuda()
-            src_K = src_K.cuda()
-            tgt_y = tgt_y.cuda()
+            src_X = src_X.to(device)
+            src_y = src_y.to(device)
+            src_K = src_K.to(device)
+            tgt_y = tgt_y.to(device)
 
             optimizer.zero_grad()
             encoder_outputs, hidden, x = encoder(src_X)
@@ -103,9 +106,9 @@ def train(model, optimizer, train_loader, args):
             n_batch = src_X.size(0)
             max_len = tgt_y.size(1)
 
-            outputs = torch.zeros(max_len, n_batch, n_vocab).cuda()
+            outputs = torch.zeros(max_len, n_batch, n_vocab).to(device)
             hidden = hidden[params.n_layer:]
-            output = torch.LongTensor([params.SOS] * n_batch).cuda()  # [n_batch]
+            output = torch.LongTensor([params.SOS] * n_batch).to(device)  # [n_batch]
             for t in range(max_len):
                 output, hidden, attn_weights = decoder(output, k_i, hidden, encoder_outputs, encoder_mask)
                 outputs[t] = output
@@ -152,23 +155,17 @@ def main():
     n_batch = args.n_batch
     temperature = params.temperature
     train_path = params.train_path
-    assert torch.cuda.is_available()
 
-    print("loading_data...")
     vocab = build_vocab(train_path, n_vocab)
-
-    # save vocab
-    with open('vocab.json', 'w') as fp:
-        json.dump(vocab.stoi, fp)
-
+    print("loading_data...")
     train_X, train_y, train_K = load_data(train_path, vocab)
     train_loader = get_data_loader(train_X, train_y, train_K, n_batch)
     print("successfully loaded")
 
-    encoder = Encoder(n_vocab, n_embed, n_hidden, n_layer, vocab).cuda()
-    Kencoder = KnowledgeEncoder(n_vocab, n_embed, n_hidden, n_layer, vocab).cuda()
-    manager = Manager(n_hidden, n_vocab, temperature).cuda()
-    decoder = Decoder(n_vocab, n_embed, n_hidden, n_layer, vocab).cuda()
+    encoder = Encoder(n_vocab, n_embed, n_hidden, n_layer, vocab).to(device)
+    Kencoder = KnowledgeEncoder(n_vocab, n_embed, n_hidden, n_layer, vocab).to(device)
+    manager = Manager(n_hidden, n_vocab, temperature).to(device)
+    decoder = Decoder(n_vocab, n_embed, n_hidden, n_layer, vocab).to(device)
 
     if args.restore:
         encoder = init_model(encoder, restore=params.encoder_restore)
