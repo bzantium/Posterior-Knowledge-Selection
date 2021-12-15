@@ -15,7 +15,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def parse_arguments():
     p = argparse.ArgumentParser(description="Hyperparams")
-    p.add_argument("-n_batch", type=int, default=128, help="number of epochs for train")
+    p.add_argument("--n_batch", type=int, default=128, help="number of epochs for train")
     return p.parse_args()
 
 

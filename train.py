@@ -16,19 +16,19 @@ from utils import (build_vocab, get_data_loader, init_model, load_data,
 def parse_arguments():
     p = argparse.ArgumentParser(description="Hyperparams")
     p.add_argument(
-        "-pre_epoch", type=int, default=5, help="number of epochs for pre_train"
+        "--pre_epoch", type=int, default=5, help="number of epochs for pre_train"
     )
     p.add_argument("-n_epoch", type=int, default=15, help="number of epochs for train")
     p.add_argument(
-        "-n_batch", type=int, default=128, help="number of batches for train"
+        "--n_batch", type=int, default=128, help="number of batches for train"
     )
     p.add_argument("-lr", type=float, default=1e-4, help="initial learning rate")
     p.add_argument(
-        "-grad_clip", type=float, default=5.0, help="in case of gradient explosion"
+        "--grad_clip", type=float, default=5.0, help="in case of gradient explosion"
     )
-    p.add_argument("-tfr", type=float, default=0.5, help="teacher forcing ratio")
+    p.add_argument("--tfr", type=float, default=0.5, help="teacher forcing ratio")
     p.add_argument(
-        "-restore",
+        "--restore",
         default=False,
         action="store_true",
         help="whether restore trained model",

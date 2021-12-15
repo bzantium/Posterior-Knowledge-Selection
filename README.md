@@ -22,7 +22,7 @@ sh download_glove.sh
 ## Train model
 #### If you run train, vocab.json and trained parameters will be saved. Then you can play demo.
 ```
-python train.py -pre_epoch 5 -n_epoch 15 -n_batch 128
+python train.py --pre_epoch 5 --n_epoch 15 --n_batch 128
 ```
 
 <br><br>
