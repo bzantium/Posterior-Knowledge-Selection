@@ -3,8 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.utils.rnn as rnn
 import torch.nn.functional as F
-from torchnlp.word_to_vector import GloVe
-from utils import gumbel_softmax
+from utils import gumbel_softmax, load_glove_vectors
+
+
+vectors = load_glove_vectors()
 
 
 class Encoder(nn.Module):
@@ -17,8 +19,8 @@ class Encoder(nn.Module):
         if vocab is None:
             self.embedding = nn.Embedding(n_vocab, n_embed)
         else:
-            embedding = torch.Tensor(n_vocab, n_embed)
-            vectors = GloVe()
+            embedding = torch.FloatTensor(n_vocab, n_embed)
+            torch.nn.init.xavier_normal_(embedding)
             for word in vocab.stoi:
                 if word in vectors:
                     embedding[vocab.stoi[word]] = vectors[word]
@@ -40,7 +42,7 @@ class Encoder(nn.Module):
         inputs = self.embedding(X)
         inputs = inputs.transpose(0, 1)
         seq_lengths = torch.sum(X > 0, dim=-1)  # [n_batch]
-        packed_inputs = rnn.pack_padded_sequence(inputs, seq_lengths, enforce_sorted=False)
+        packed_inputs = rnn.pack_padded_sequence(inputs, seq_lengths.to(torch.device("cpu")), enforce_sorted=False)
         packed_outputs, hidden = self.gru(packed_inputs)  # hidden: [2*n_layer, n_batch, n_hidden]
         last_hidden = hidden.view(self.n_layer, 2, n_batch, self.n_hidden)
         f_hidden, b_hidden = last_hidden[-1]
@@ -61,8 +63,8 @@ class KnowledgeEncoder(nn.Module):
         if vocab is None:
             self.embedding = nn.Embedding(n_vocab, n_embed)
         else:
-            embedding = torch.Tensor(n_vocab, n_embed)
-            vectors = GloVe()
+            embedding = torch.FloatTensor(n_vocab, n_embed)
+            torch.nn.init.xavier_normal_(embedding)
             for word in vocab.stoi:
                 if word in vectors:
                     embedding[vocab.stoi[word]] = vectors[word]
@@ -88,7 +90,7 @@ class KnowledgeEncoder(nn.Module):
             for i in range(N):
                 k = inputs[i].transpose(0, 1)  # [n_batch, seq_len, n_embed]
                 seq_lengths = torch.sum(K[:, i] > 0, dim=-1)
-                packed_inputs = rnn.pack_padded_sequence(k, seq_lengths, enforce_sorted=False)
+                packed_inputs = rnn.pack_padded_sequence(k, seq_lengths.to(torch.device("cpu")), enforce_sorted=False)
                 _, hidden = self.gru(packed_inputs)  # hidden: [2*n_layer, n_batch, n_hidden]
                 hidden = hidden.view(self.n_layer, 2, n_batch, self.n_hidden)
                 f_hidden, b_hidden = hidden[-1]
@@ -101,7 +103,7 @@ class KnowledgeEncoder(nn.Module):
             inputs = self.embedding(y)
             inputs = inputs.transpose(0, 1)  # [seq_len, n_batch, n_embed]
             seq_lengths = torch.sum(y > 0, dim=-1)  # [n_batch]
-            packed_inputs = rnn.pack_padded_sequence(inputs, seq_lengths, enforce_sorted=False)
+            packed_inputs = rnn.pack_padded_sequence(inputs, seq_lengths.to(torch.device("cpu")), enforce_sorted=False)
             _, hidden = self.gru(packed_inputs)  # hidden: [2*n_layer, n_batch, n_hidden]
             hidden = hidden.view(self.n_layer, 2, n_batch, self.n_hidden)
             f_hidden, b_hidden = hidden[-1]
@@ -187,10 +189,10 @@ class Decoder(nn.Module):  # Hierarchical Gated Fusion Unit
         if vocab is None:
             self.embedding = nn.Embedding(n_vocab, n_embed)
         else:
-            embedding = torch.Tensor(n_vocab, n_embed)
-            vectors = GloVe()
+            embedding = torch.FloatTensor(n_vocab, n_embed)
+            torch.nn.init.xavier_normal_(embedding)
             for word in vocab.stoi:
-                if word in vectors.stoi:
+                if word in vectors:
                     embedding[vocab.stoi[word]] = vectors[word]
             self.embedding = nn.Embedding.from_pretrained(embedding)
             print("decoder embedding is initialized with Glove")
@@ -223,8 +225,8 @@ class Decoder(nn.Module):  # Hierarchical Gated Fusion Unit
         context = context.transpose(0, 1)  # [1, n_batch, n_hidden]
         y_input = torch.cat((embedded, context), dim=-1)
         k_input = torch.cat((k.unsqueeze(0), context), dim=-1)
-        y_output, y_hidden = self.y_gru(y_input, hidden)  # y_hidden: [n_layer, n_batch, n_hidden]
-        k_output, k_hidden = self.k_gru(k_input, hidden)  # k_hidden: [n_layer, n_batch, n_hidden]
+        _, y_hidden = self.y_gru(y_input, hidden)  # y_hidden: [n_layer, n_batch, n_hidden]
+        _, k_hidden = self.k_gru(k_input, hidden)  # k_hidden: [n_layer, n_batch, n_hidden]
         t_hidden = torch.tanh(torch.cat((self.y_weight(y_hidden), self.k_weight(k_hidden)), dim=-1))
         # t_hidden: [n_layer, n_batch, 2*n_hidden]
         r = torch.sigmoid(self.z_weight(t_hidden))  # [n_layer, n_batch, n_hidden]

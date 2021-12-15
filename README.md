@@ -8,23 +8,27 @@ For decoder, I apply Hierarchical Gated Fusion Unit (HGFU) [[Yao et al. 2017](ht
 </p>
 
 <br><br>
-## Requirement
-- pytorch
-- pytorch-nlp
-- nltk
-- nltk.download('punkt')
+## prerequisite
+#### 1. Install required packages
+```
+sh install.sh
+```
+#### 2. Download and extract glove files and pickle as torch tensors.
+```
+sh download_glove.sh
+```
 
 <br><br>
 ## Train model
 #### If you run train, vocab.json and trained parameters will be saved. Then you can play demo.
 ```
-$ python train.py -pre_epoch 5 -n_epoch 15 -n_batch 128
+python train.py -pre_epoch 5 -n_epoch 15 -n_batch 128
 ```
 
 <br><br>
 ## Play demo
 ```
-$ python demo.py
+python demo.py
 ```
 #### You need to type three knowledges and utterance. Then bot will reply!
 ```
