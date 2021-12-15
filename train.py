@@ -1,32 +1,38 @@
-import random
 import argparse
 import json
+import random
+
 import torch
-from torch import optim
 import torch.nn as nn
+from torch import optim
 from torch.nn.utils import clip_grad_norm_
+
 import params
-from utils import init_model, save_models, \
-    build_vocab, load_data, get_data_loader
-from model import Encoder, KnowledgeEncoder, Decoder, Manager
+from model import Decoder, Encoder, KnowledgeEncoder, Manager
+from utils import (build_vocab, get_data_loader, init_model, load_data,
+                   save_models)
 
 
 def parse_arguments():
-    p = argparse.ArgumentParser(description='Hyperparams')
-    p.add_argument('-pre_epoch', type=int, default=5,
-                   help='number of epochs for pre_train')
-    p.add_argument('-n_epoch', type=int, default=15,
-                   help='number of epochs for train')
-    p.add_argument('-n_batch', type=int, default=128,
-                   help='number of batches for train')
-    p.add_argument('-lr', type=float, default=1e-4,
-                   help='initial learning rate')
-    p.add_argument('-grad_clip', type=float, default=5.0,
-                   help='in case of gradient explosion')
-    p.add_argument('-tfr', type=float, default=0.5,
-                   help='teacher forcing ratio')
-    p.add_argument('-restore', default=False, action='store_true',
-                   help='whether restore trained model')
+    p = argparse.ArgumentParser(description="Hyperparams")
+    p.add_argument(
+        "-pre_epoch", type=int, default=5, help="number of epochs for pre_train"
+    )
+    p.add_argument("-n_epoch", type=int, default=15, help="number of epochs for train")
+    p.add_argument(
+        "-n_batch", type=int, default=128, help="number of batches for train"
+    )
+    p.add_argument("-lr", type=float, default=1e-4, help="initial learning rate")
+    p.add_argument(
+        "-grad_clip", type=float, default=5.0, help="in case of gradient explosion"
+    )
+    p.add_argument("-tfr", type=float, default=0.5, help="teacher forcing ratio")
+    p.add_argument(
+        "-restore",
+        default=False,
+        action="store_true",
+        help="whether restore trained model",
+    )
     return p.parse_args()
 
 
@@ -36,9 +42,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def pre_train(model, optimizer, train_loader, args):
     encoder, Kencoder, manager, decoder = [*model]
     encoder.train(), Kencoder.train(), manager.train(), decoder.train()
-    parameters = list(encoder.parameters()) + list(Kencoder.parameters()) + \
-                 list(manager.parameters())
-    NLLLoss = nn.NLLLoss(reduction='mean', ignore_index=params.PAD)
+    parameters = (
+        list(encoder.parameters())
+        + list(Kencoder.parameters())
+        + list(manager.parameters())
+    )
+    NLLLoss = nn.NLLLoss(reduction="mean", ignore_index=params.PAD)
 
     for epoch in range(args.pre_epoch):
         b_loss = 0
@@ -54,8 +63,13 @@ def pre_train(model, optimizer, train_loader, args):
 
             n_vocab = params.n_vocab
             seq_len = src_y.size(1) - 1
-            _, _, _, k_logits = manager(x, y, K) # k_logits: [n_batch, n_vocab]
-            k_logits = k_logits.repeat(seq_len, 1, 1).transpose(0, 1).contiguous().view(-1, n_vocab)
+            _, _, _, k_logits = manager(x, y, K)  # k_logits: [n_batch, n_vocab]
+            k_logits = (
+                k_logits.repeat(seq_len, 1, 1)
+                .transpose(0, 1)
+                .contiguous()
+                .view(-1, n_vocab)
+            )
             bow_loss = NLLLoss(k_logits, src_y[:, 1:].contiguous().view(-1))
             bow_loss.backward()
             clip_grad_norm_(parameters, args.grad_clip)
@@ -63,9 +77,10 @@ def pre_train(model, optimizer, train_loader, args):
             b_loss += bow_loss.item()
             if (step + 1) % 50 == 0:
                 b_loss /= 50
-                print("Epoch [%.1d/%.1d] Step [%.4d/%.4d]: bow_loss=%.4f" % (epoch + 1, args.pre_epoch,
-                                                                             step + 1, len(train_loader),
-                                                                             b_loss))
+                print(
+                    "Epoch [%.1d/%.1d] Step [%.4d/%.4d]: bow_loss=%.4f"
+                    % (epoch + 1, args.pre_epoch, step + 1, len(train_loader), b_loss)
+                )
                 b_loss = 0
         # save models
         save_models(model, params.all_restore)
@@ -74,10 +89,14 @@ def pre_train(model, optimizer, train_loader, args):
 def train(model, optimizer, train_loader, args):
     encoder, Kencoder, manager, decoder = [*model]
     encoder.train(), Kencoder.train(), manager.train(), decoder.train()
-    parameters = list(encoder.parameters()) + list(Kencoder.parameters()) + \
-                 list(manager.parameters()) + list(decoder.parameters())
-    NLLLoss = nn.NLLLoss(reduction='mean', ignore_index=params.PAD)
-    KLDLoss = nn.KLDivLoss(reduction='batchmean')
+    parameters = (
+        list(encoder.parameters())
+        + list(Kencoder.parameters())
+        + list(manager.parameters())
+        + list(decoder.parameters())
+    )
+    NLLLoss = nn.NLLLoss(reduction="mean", ignore_index=params.PAD)
+    KLDLoss = nn.KLDivLoss(reduction="batchmean")
 
     for epoch in range(args.n_epoch):
         b_loss = 0
@@ -92,7 +111,7 @@ def train(model, optimizer, train_loader, args):
 
             optimizer.zero_grad()
             encoder_outputs, hidden, x = encoder(src_X)
-            encoder_mask = (src_X == 0)[:, :encoder_outputs.size(0)].unsqueeze(1).byte()
+            encoder_mask = (src_X == 0)[:, : encoder_outputs.size(0)].unsqueeze(1)
             y = Kencoder(src_y)
             K = Kencoder(src_K)
             prior, posterior, k_i, k_logits = manager(x, y, K)
@@ -100,25 +119,31 @@ def train(model, optimizer, train_loader, args):
 
             n_vocab = params.n_vocab
             seq_len = src_y.size(1) - 1
-            k_logits = k_logits.repeat(seq_len, 1, 1).transpose(0, 1).contiguous().view(-1, n_vocab)
+            k_logits = (
+                k_logits.repeat(seq_len, 1, 1)
+                .transpose(0, 1)
+                .contiguous()
+                .view(-1, n_vocab)
+            )
             bow_loss = NLLLoss(k_logits, src_y[:, 1:].contiguous().view(-1))
 
             n_batch = src_X.size(0)
             max_len = tgt_y.size(1)
 
             outputs = torch.zeros(max_len, n_batch, n_vocab).to(device)
-            hidden = hidden[params.n_layer:]
+            hidden = hidden[params.n_layer :]
             output = torch.LongTensor([params.SOS] * n_batch).to(device)  # [n_batch]
             for t in range(max_len):
-                output, hidden, attn_weights = decoder(output, k_i, hidden, encoder_outputs, encoder_mask)
+                output, hidden = decoder(
+                    output, k_i, hidden, encoder_outputs, encoder_mask
+                )
                 outputs[t] = output
                 is_teacher = random.random() < args.tfr  # teacher forcing ratio
                 top1 = output.data.max(1)[1]
                 output = tgt_y[:, t] if is_teacher else top1
 
             outputs = outputs.transpose(0, 1).contiguous()
-            nll_loss = NLLLoss(outputs.view(-1, n_vocab),
-                               tgt_y.contiguous().view(-1))
+            nll_loss = NLLLoss(outputs.view(-1, n_vocab), tgt_y.contiguous().view(-1))
 
             loss = kldiv_loss + nll_loss + bow_loss
             loss.backward()
@@ -134,10 +159,19 @@ def train(model, optimizer, train_loader, args):
                 n_loss /= 50
                 b_loss /= 50
                 t_loss /= 50
-                print("Epoch [%.2d/%.2d] Step [%.4d/%.4d]: total_loss=%.4f kldiv_loss=%.4f bow_loss=%.4f nll_loss=%.4f"
-                      % (epoch + 1, args.n_epoch,
-                         step + 1, len(train_loader),
-                         t_loss, k_loss, b_loss, n_loss))
+                print(
+                    "Epoch [%.2d/%.2d] Step [%.4d/%.4d]: total_loss=%.4f kldiv_loss=%.4f bow_loss=%.4f nll_loss=%.4f"
+                    % (
+                        epoch + 1,
+                        args.n_epoch,
+                        step + 1,
+                        len(train_loader),
+                        t_loss,
+                        k_loss,
+                        b_loss,
+                        n_loss,
+                    )
+                )
                 k_loss = 0
                 n_loss = 0
                 b_loss = 0
@@ -174,8 +208,12 @@ def main():
         decoder = init_model(decoder, restore=params.decoder_restore)
 
     model = [encoder, Kencoder, manager, decoder]
-    parameters = list(encoder.parameters()) + list(Kencoder.parameters()) + \
-                 list(manager.parameters()) + list(decoder.parameters())
+    parameters = (
+        list(encoder.parameters())
+        + list(Kencoder.parameters())
+        + list(manager.parameters())
+        + list(decoder.parameters())
+    )
     optimizer = optim.Adam(parameters, lr=args.lr)
 
     # pre_train knowledge manager
@@ -193,4 +231,3 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt as e:
         print("[STOP]", e)
-

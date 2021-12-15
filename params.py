@@ -17,5 +17,4 @@ encoder_restore = "snapshots/PostKS-encoder.pt"
 Kencoder_restore = "snapshots/PostKS-Kencoder.pt"
 manager_restore = "snapshots/PostKS-manager.pt"
 decoder_restore = "snapshots/PostKS-decoder.pt"
-all_restore=[encoder_restore, Kencoder_restore, manager_restore, decoder_restore]
-
+all_restore = [encoder_restore, Kencoder_restore, manager_restore, decoder_restore]

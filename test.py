@@ -1,30 +1,34 @@
-import os
+import argparse
 import json
+import os
+
 import torch
 import torch.nn as nn
+
 import params
-import argparse
-from utils import init_model, Vocabulary, build_vocab, load_data, get_data_loader
-from model import Encoder, KnowledgeEncoder, Decoder, Manager
+from model import Decoder, Encoder, KnowledgeEncoder, Manager
+from utils import (Vocabulary, build_vocab, get_data_loader, init_model,
+                   load_data)
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def parse_arguments():
-    p = argparse.ArgumentParser(description='Hyperparams')
-    p.add_argument('-n_batch', type=int, default=128,
-                   help='number of epochs for train')
+    p = argparse.ArgumentParser(description="Hyperparams")
+    p.add_argument("-n_batch", type=int, default=128, help="number of epochs for train")
     return p.parse_args()
 
 
 def evaluate(model, test_loader):
     encoder, Kencoder, manager, decoder = [*model]
     encoder.eval(), Kencoder.eval(), manager.eval(), decoder.eval()
-    NLLLoss = nn.NLLLoss(reduction='mean', ignore_index=params.PAD)
+    NLLLoss = nn.NLLLoss(reduction="mean", ignore_index=params.PAD)
     total_loss = 0
 
     for step, (src_X, _, src_K, tgt_y) in enumerate(test_loader):
-        src_X = src_X.cuda()
-        src_K = src_K.cuda()
-        tgt_y = tgt_y.cuda()
+        src_X = src_X.to(device)
+        src_K = src_K.to(device)
+        tgt_y = tgt_y.to(device)
 
         encoder_outputs, hidden, x = encoder(src_X)
         encoder_mask = (src_X == 0).unsqueeze(1).byte()
@@ -34,17 +38,18 @@ def evaluate(model, test_loader):
         max_len = tgt_y.size(1)
         n_vocab = params.n_vocab
 
-        outputs = torch.zeros(max_len, n_batch, n_vocab).cuda()
-        hidden = hidden[params.n_layer:]
-        output = torch.LongTensor([params.SOS] * n_batch).cuda()  # [n_batch]
+        outputs = torch.zeros(max_len, n_batch, n_vocab).to(device)
+        hidden = hidden[params.n_layer :]
+        output = torch.LongTensor([params.SOS] * n_batch).to(device)  # [n_batch]
         for t in range(max_len):
-            output, hidden, attn_weights = decoder(output, k_i, hidden, encoder_outputs, encoder_mask)
+            output, hidden, attn_weights = decoder(
+                output, k_i, hidden, encoder_outputs, encoder_mask
+            )
             outputs[t] = output
             output = output.data.max(1)[1]
 
         outputs = outputs.transpose(0, 1).contiguous()
-        loss = NLLLoss(outputs.view(-1, n_vocab),
-                           tgt_y.contiguous().view(-1))
+        loss = NLLLoss(outputs.view(-1, n_vocab), tgt_y.contiguous().view(-1))
         total_loss += loss.item()
     total_loss /= len(test_loader)
     print("nll_loss=%.4f" % (total_loss))
@@ -59,29 +64,27 @@ def main():
     n_batch = args.n_batch
     temperature = params.temperature
     test_path = params.test_path
-    assert torch.cuda.is_available()
-
-    print("loading_data...")
 
     if os.path.exists("vocab.json"):
         vocab = Vocabulary()
-        with open('vocab.json', 'r') as fp:
-            vocab.stoi = json.load(fp)
+        with open("vocab.json", "r") as f:
+            vocab.stoi = json.load(f)
 
-        for key, value in vocab.stoi.items():
+        for key in vocab.stoi.items():
             vocab.itos.append(key)
     else:
-        train_path = params.train_path
-        vocab = build_vocab(train_path, n_vocab)
+        print("vocabulary doesn't exist!")
+        return
 
+    print("loading_data...")
     test_X, test_y, test_K = load_data(test_path, vocab)
     test_loader = get_data_loader(test_X, test_y, test_K, n_batch)
     print("successfully loaded")
 
-    encoder = Encoder(n_vocab, n_embed, n_hidden, n_layer).cuda()
-    Kencoder = KnowledgeEncoder(n_vocab, n_embed, n_hidden, n_layer).cuda()
-    manager = Manager(n_hidden, n_vocab, temperature).cuda()
-    decoder = Decoder(n_vocab, n_embed, n_hidden, n_layer).cuda()
+    encoder = Encoder(n_vocab, n_embed, n_hidden, n_layer).to(device)
+    Kencoder = KnowledgeEncoder(n_vocab, n_embed, n_hidden, n_layer).to(device)
+    manager = Manager(n_hidden, n_vocab, temperature).to(device)
+    decoder = Decoder(n_vocab, n_embed, n_hidden, n_layer).to(device)
 
     encoder = init_model(encoder, restore=params.encoder_restore)
     Kencoder = init_model(Kencoder, restore=params.Kencoder_restore)
@@ -97,5 +100,4 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt as e:
-
         print("[STOP]", e)
