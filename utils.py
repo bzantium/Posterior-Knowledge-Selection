@@ -1,17 +1,22 @@
+import gzip
+import json
 import os
+import pickle
+from collections import Counter
+
+import nltk
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
+
 import params
-from collections import Counter
-import pickle
-import nltk
-import gzip
-import json
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def sample_gumbel(shape, eps=1e-20):
-    U = torch.rand(shape).cuda()
+    U = torch.rand(shape).to(device)
     return -torch.log(-torch.log(U + eps) + eps)
 
 
@@ -40,8 +45,6 @@ def init_model(net, restore=None):
     if restore is not None and os.path.exists(restore):
         net.load_state_dict(torch.load(restore))
         print("Restore model from: {}".format(os.path.abspath(restore)))
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
     return net
 
@@ -73,7 +76,9 @@ def pickle_glove_vectors():
             split_line = line.split()
             word = split_line[0]
             try:
-                glove_vectors[word] = torch.FloatTensor(np.array(split_line[1:], dtype=np.float32))
+                glove_vectors[word] = torch.FloatTensor(
+                    np.array(split_line[1:], dtype=np.float32)
+                )
             except:
                 pass
     print("Start to pickle glove vectors...")
@@ -106,10 +111,10 @@ def build_vocab(path, n_vocab):
             vocab = Vocabulary()
             # vocab = dict()
             # reverse_vocab = dict()
-            vocab.stoi['<PAD>'] = params.PAD
-            vocab.stoi['<UNK>'] = params.UNK
-            vocab.stoi['<SOS>'] = params.SOS
-            vocab.stoi['<EOS>'] = params.EOS
+            vocab.stoi["<PAD>"] = params.PAD
+            vocab.stoi["<UNK>"] = params.UNK
+            vocab.stoi["<SOS>"] = params.SOS
+            vocab.stoi["<EOS>"] = params.EOS
 
             initial_vocab_size = len(vocab.stoi)
             vocab_idx = initial_vocab_size
@@ -158,7 +163,7 @@ def build_vocab(path, n_vocab):
             for key in vocab.stoi.keys():
                 vocab.itos.append(key)
 
-        with open('vocab.json', 'w') as fp:
+        with open("vocab.json", "w") as fp:
             json.dump(vocab.stoi, fp)
 
     return vocab
@@ -200,7 +205,7 @@ def load_data(path, vocab):
             if word in vocab.stoi:
                 X_temp.append(vocab.stoi[word])
             else:
-                X_temp.append(vocab.stoi['<UNK>'])
+                X_temp.append(vocab.stoi["<UNK>"])
         X_ind.append(X_temp)
 
     for line in y:
@@ -210,7 +215,7 @@ def load_data(path, vocab):
             if word in vocab.stoi:
                 y_temp.append(vocab.stoi[word])
             else:
-                y_temp.append(vocab.stoi['<UNK>'])
+                y_temp.append(vocab.stoi["<UNK>"])
         y_ind.append(y_temp)
 
     for lines in K:
@@ -222,7 +227,7 @@ def load_data(path, vocab):
                 if word in vocab.stoi:
                     k_temp.append(vocab.stoi[word])
                 else:
-                    k_temp.append(vocab.stoi['<UNK>'])
+                    k_temp.append(vocab.stoi["<UNK>"])
             K_temp.append(k_temp)
         K_ind.append(K_temp)
 
@@ -231,11 +236,7 @@ def load_data(path, vocab):
 
 def get_data_loader(X, y, K, n_batch):
     dataset = PersonaDataset(X, y, K)
-    data_loader = DataLoader(
-        dataset=dataset,
-        batch_size=n_batch,
-        shuffle=True
-    )
+    data_loader = DataLoader(dataset=dataset, batch_size=n_batch, shuffle=True)
     return data_loader
 
 
@@ -335,7 +336,7 @@ def knowledgeToIndex(K, vocab):
     K1 = torch.LongTensor(K1).unsqueeze(0)
     K2 = torch.LongTensor(K2).unsqueeze(0)
     K3 = torch.LongTensor(K3).unsqueeze(0)
-    K = torch.cat((K1, K2, K3), dim=0).unsqueeze(0).cuda()  # K: [1, 3, seq_len]
+    K = torch.cat((K1, K2, K3), dim=0).unsqueeze(0).to(device)  # K: [1, 3, seq_len]
     return K
 
 
